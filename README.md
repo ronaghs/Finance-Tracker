@@ -1,8 +1,11 @@
-# React + Vite
+# Finance Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Help users manage their personal finances by tracking income, expenses, and savings goals. Provides visual insights through a clean and simply designed dashboard to make keeping up with finances easy. This will enable users to make more informed financial decisions, monitor their overall financial health/status, and help acheive savings goals.
 
-Currently, two official plugins are available:
+### Technologies
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React
+- Google Firestore Firebase
+- Tailwind
+- Material UI
+- Chart.js
