@@ -1,6 +1,9 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
+    const navigate = useNavigate();
+
     return (
         <div className="p-4">
             <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
@@ -10,6 +13,9 @@ function Dashboard() {
                 <div className="bg-white shadow p-4">Savings</div>
                 <div className="bg-white shadow p-4">Budget</div>
             </div>
+            <button onClick={() => navigate("/budget-tracker")} className="btn">
+                Change Income/Expenses
+            </button>
         </div>
     );
 }
