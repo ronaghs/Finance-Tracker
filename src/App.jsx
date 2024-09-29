@@ -1,13 +1,16 @@
-import "./index.css";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import LandingPage from "./LandingPage";
+import LoginPage from "./LoginPage";
+import Dashboard from "./Dashboard";
 
 function App() {
-  return (
-    <>
-      <h1 className="text-red-500 text-6xl flex justify-center items-center h-screen">
-        Finance Tracker
-      </h1>
-    </>
-  );
+    return (
+        <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+    );
 }
 
 export default App;
