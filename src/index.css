@@ -12,6 +12,28 @@
     cursor: pointer;
 }
 
-.btn:hover {
-    background-color: #45a049;
+    .btn:hover {
+        background-color: #45a049;
+    }
+
+/* New styles for charts */
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 10px;
+    width: 100%;
+    max-width: 500px; /* Limit width of each chart */
+}
+
+.pie-charts {
+    display: flex;
+    justify-content: space-around; /* Distribute space between charts */
+    flex-wrap: wrap; /* Allow charts to stack on small screens */
+}
+
+.line-chart {
+    width: 100%; /* Make sure the line chart takes full width */
+    max-width: 800px; /* Limit max width for line chart */
+    margin: auto; /* Center the line chart */
 }
