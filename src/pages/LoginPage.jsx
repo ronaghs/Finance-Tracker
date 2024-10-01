@@ -17,51 +17,62 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Modal from "@mui/material/Modal";
 import { FcGoogle } from "react-icons/fc";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import { motion } from "framer-motion";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "../firebase/firebaseconfig"; // Ensure the Firebase config is properly imported.
 
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
-
-  //TODO: Error should be resolved once Firebase is setup.
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  //TODO: Remove after setting up Firebase auth sign in
-  // Placeholder for a sign in function
+  // Firebase sign-in using email and password
   const signIn = async (event) => {
     event.preventDefault();
     setError(null);
     setLoading(true);
 
-    //TODO: Remove after setting up Firebase auth sign in
-    // Placeholder. Simulates a successful login
-    setTimeout(() => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate("/dashboard"); // Redirect to dashboard on successful login
+    } catch (err) {
+      console.error(err);
+      setError("Invalid email or password");
       setLoading(false);
-      navigate("/Dashboard");
-    }, 1000);
+    }
   };
 
   const handleCloseModal = () => {
     setModalOpen(false);
   };
 
+  // Firebase Google sign-in
   const signInWithGoogle = async () => {
     setError(null);
     setLoading(true);
     setModalOpen(true);
 
-    //TODO: Simulate Google sign-in, remove after Firebase setup
-    setTimeout(() => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+      navigate("/dashboard");
+    } catch (err) {
+      console.error(err);
+      setError("Google sign-in failed");
       setLoading(false);
       setModalOpen(false);
-      navigate("/dashboard");
-    }, 1000);
+    }
   };
 
   return (
-    <div>
+    <motion.div
+      initial={{ opacity: 0, y: "100%" }}
+      animate={{ opacity: 1, y: "0%" }}
+      exit={{ opacity: 0, y: "-100%" }}
+      transition={{ duration: 1, ease: [0.43, 0.13, 0.23, 0.96] }}
+    >
       <ResponsiveAppBar />
       <ThemeProvider theme={createTheme()}>
         <Container component="main" maxWidth="xs">
@@ -126,13 +137,8 @@ function LoginPage() {
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
               >
-                Sign In
+                {loading ? <CircularProgress size={24} /> : "Sign In"}
               </Button>
-              {/* TODO: Remove <p></p> once firebase is set up */}
-              <p>
-                Just click the sign in button to be "logged in" for now. No
-                credentials needed
-              </p>
               <Typography sx={{ textAlign: "center" }} variant="h6">
                 OR
               </Typography>
@@ -144,12 +150,14 @@ function LoginPage() {
               >
                 Continue with Google <FcGoogle className="googleIcon" />
               </Button>
+              <p>
+                username: test@mail.com
+                <br />
+                password: 123456
+              </p>
               <Grid container>
                 <Grid item xs>
-                  {/* TODO: Add logic for password recovery */}
-                  {/* <Link href="#" variant="body2">
-                    Forgot password?
-                  </Link> */}
+                  {/* Logic for password recovery can be added here */}
                 </Grid>
                 <Grid item>
                   <NavLink
@@ -161,16 +169,8 @@ function LoginPage() {
                       cursor: "pointer",
                     }}
                   >
-                    Don't have an account? Sign Up
+                    Don&apos;t have an account? Sign Up
                   </NavLink>
-                  <p>
-                    Demo credentials (add later to let people sign in and check
-                    things out w/out having to create an account)
-                    <br />
-                    username:
-                    <br />
-                    password:
-                  </p>
                 </Grid>
               </Grid>
             </Box>
@@ -203,7 +203,7 @@ function LoginPage() {
           <CircularProgress sx={{ color: "blue" }} />
         </Box>
       </Modal>
-    </div>
+    </motion.div>
   );
 }
 

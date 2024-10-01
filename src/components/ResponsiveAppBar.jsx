@@ -1,4 +1,3 @@
-//TODO: A few declare errors. Leaving untouched till Firebase is sorted, as they will all be resolved once that is done.
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import AppBar from "@mui/material/AppBar";
@@ -13,15 +12,14 @@ import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 
-// TODO: Reintroduce Firebase Auth imports later, since Firebase is not set up yet, site wont load.
-/* import { signOut } from "firebase/auth";
-import { auth } from "firebase/firebaseConfig"; */
+// Firebase Authentication Imports
+import { signOut, onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase/firebaseconfig"; // Ensure the correct path to firebaseConfig
 
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
-//TODO: Placeholders for future navigation links in the navigation bar (you wont be able to see these until Firebase auth is set up to let the site know a user is logged in. We don't want to have these on display if a user is not signed in.)
 const pages = [
   { label: "Dashboard", path: "/dashboard" },
   { label: "Expenses", path: "/expenses" },
@@ -30,22 +28,20 @@ const pages = [
 
 function ResponsiveAppBar() {
   const [anchorElNav, setAnchorElNav] = useState(null);
-
-  //TODO: Delcare error should resolve once Firebase is setup
   const [loggedIn, setLoggedIn] = useState(false);
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
   const navigate = useNavigate();
 
-  //TODO: Uncomment once Firebase is set up. Site can't load if this is not commented out for now.
-  /*  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setLoggedIn(!!user);
+  // Firebase Authentication: Set up an observer on Auth object to check if user is logged in or not
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setLoggedIn(!!user); // Set loggedIn to true if user exists, false otherwise
     });
 
     return () => {
-      unsubscribe();
+      unsubscribe(); // Cleanup subscription on component unmount
     };
-  }, []); */
+  }, []);
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -55,16 +51,16 @@ function ResponsiveAppBar() {
     setAnchorElNav(null);
   };
 
-  // TODO: Set up SignOut once Firebase is initialized
+  // Logout function
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await signOut(auth); // Sign out the user
       setShowLogoutConfirmation(true);
       setTimeout(() => {
-        navigate("/signin");
-      }, 1500); // 1.5 second delay before redirecting to signin page
+        navigate("/login"); // Redirect to sign-in page after logout
+      }, 1500);
     } catch (err) {
-      console.error(err);
+      console.error("Logout error:", err); // Catch and log any errors during sign-out
     }
   };
 
@@ -179,7 +175,7 @@ function ResponsiveAppBar() {
             )}
           </Box>
 
-          {/* TODO: After Firebase is set up, this should be able to serve as the logout button/function */}
+          {/* Logout or login based on user state */}
           <Box className="accountIcon">
             {loggedIn ? (
               <Button
