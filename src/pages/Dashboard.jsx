@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Line, Pie } from "react-chartjs-2";
-import { useNavigate } from "react-router-dom";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
+import IncomeEditor from "../components/IncomeEditor";
+import ExpenseEditor from "../components/ExpenseEditor";
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -27,10 +28,12 @@ ChartJS.register(
 );
 
 function Dashboard() {
-    const navigate = useNavigate();
-
     const [monthlyData, setMonthlyData] = useState({});
     const [selectedMonth, setSelectedMonth] = useState("January");
+
+    // Popup state
+    const [isIncomePopupOpen, setIncomePopupOpen] = useState(false);
+    const [isExpensePopupOpen, setExpensePopupOpen] = useState(false);
 
     // Change this when database is implemented
     useEffect(() => {
@@ -166,17 +169,52 @@ function Dashboard() {
                     </>
                 ) : (
                     <div className="text-center">
-                        <p className="text-lg">You have no income or expenses for {selectedMonth}. Please press the button below to add income or expenses.</p>
-                        <button onClick={() => navigate("/budget-tracker")} className="btn mt-4">
-                            Add Income/Expenses
-                        </button>
+                        <p className="text-lg">You have no income or expenses for {selectedMonth}. Please press the buttons below to add income or expenses.</p>
                     </div>
                 )}
             </div>
 
-            <button onClick={() => navigate("/budget-tracker")} className="btn mt-4">
-                Change Income/Expenses
-            </button>
+            <div>
+                {/* Buttons to open popups */}
+                <div className="mt-4">
+                    <button onClick={() => setIncomePopupOpen(true)} className="btn">
+                        Add Income
+                    </button>
+                    <button onClick={() => setExpensePopupOpen(true)} className="btn ml-4">
+                        Add Expense
+                    </button>
+                </div>
+
+                {/* Income Editor Popup */}
+                {isIncomePopupOpen && (
+                    <div className="popup">
+                        <div className="popup-content">
+                            <button
+                                onClick={() => setIncomePopupOpen(false)}
+                                className="close-button"
+                            >
+                                &times; {/* This represents the "X" */}
+                            </button>
+                            <IncomeEditor onClose={() => setIncomePopupOpen(false)} />
+                        </div>
+                    </div>
+                )}
+
+                {/* Expense Editor Popup */}
+                {isExpensePopupOpen && (
+                    <div className="popup">
+                        <div className="popup-content">
+                            <button
+                                onClick={() => setExpensePopupOpen(false)}
+                                className="close-button"
+                            >
+                                &times; {/* This represents the "X" */}
+                            </button>
+                            <ExpenseEditor onClose={() => setExpensePopupOpen(false)} />
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
