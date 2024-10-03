@@ -2,8 +2,6 @@ import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
 import TextField from "@mui/material/TextField";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
 import Grid from "@mui/material/Grid2";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -127,10 +125,22 @@ function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <FormControlLabel
-                control={<Checkbox value="remember" color="primary" />}
-                label="Remember me"
-              />
+
+              {/* "Forgot password?" link placed right-aligned under password field */}
+              <Grid container justifyContent="flex-end">
+                <NavLink
+                  to="/password-recovery" // Password recovery page link
+                  style={{
+                    color: "blue",
+                    fontWeight: "bold",
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                  }}
+                >
+                  Forgot password?
+                </NavLink>
+              </Grid>
+
               <Button
                 type="submit"
                 fullWidth
@@ -139,9 +149,7 @@ function LoginPage() {
               >
                 {loading ? <CircularProgress size={24} /> : "Sign In"}
               </Button>
-              <Typography sx={{ textAlign: "center" }} variant="h6">
-                OR
-              </Typography>
+
               <Button
                 fullWidth
                 variant="contained"
@@ -150,15 +158,8 @@ function LoginPage() {
               >
                 Continue with Google <FcGoogle className="googleIcon" />
               </Button>
-              <p>
-                username: test@mail.com
-                <br />
-                password: 123456
-              </p>
-              <Grid container>
-                <Grid item xs>
-                  {/* Logic for password recovery can be added here */}
-                </Grid>
+
+              <Grid container justifyContent="left">
                 <Grid item>
                   <NavLink
                     to="/signup"
@@ -173,6 +174,13 @@ function LoginPage() {
                   </NavLink>
                 </Grid>
               </Grid>
+
+              {/* Testing info moved below the "Don't have an account?" link */}
+              <p style={{ textAlign: "left", marginTop: "10px" }}>
+                username: test@mail.com
+                <br />
+                password: 123456
+              </p>
             </Box>
           </Box>
         </Container>
