@@ -1,6 +1,10 @@
 import { useState } from "react";
+import { db } from "../firebase/firebaseconfig";
+import { collection, addDoc } from "firebase/firestore";
+
 function ExpenseEditor() {
-    const [expenses, setExpenses] = useState([{ name: "", value: 0 }]);
+    const [expenses, setExpenses] = useState([{ name: "", value: 0, date: "" }]);
+    const [message, setMessage] = useState("");
 
     const handleExpenseChange = (index, event) => {
         const values = [...expenses];
@@ -8,12 +12,27 @@ function ExpenseEditor() {
         setExpenses(values);
     };
 
-    const addExpenseRow = () =>
-        setExpenses([...expenses, { name: "", value: 0 }]);
+    const addExpenseRow = () => setExpenses([...expenses, { name: "", value: 0, date: "" }]);
 
     const removeExpenseRow = (index) => {
         const values = expenses.filter((_, i) => i !== index);
         setExpenses(values);
+    };
+
+    const saveExpensesToDB = async () => {
+        try {
+            for (let expense of expenses) {
+                await addDoc(collection(db, "expenses"), {
+                    name: expense.name,
+                    value: expense.value,
+                    date: expense.date
+                });
+            }
+            setMessage("Expenses saved successfully!");
+        } catch (error) {
+            console.error("Error saving expenses: ", error);
+            setMessage("Error saving expenses.");
+        }
     };
 
     return (
@@ -37,6 +56,13 @@ function ExpenseEditor() {
                         onChange={(e) => handleExpenseChange(index, e)}
                         className="border p-1 mr-2"
                     />
+                    <input
+                        type="date"
+                        name="date"
+                        value={row.date}
+                        onChange={(e) => handleExpenseChange(index, e)}
+                        className="border p-1 mr-2"
+                    />
                     <button
                         onClick={() => removeExpenseRow(index)}
                         className="bg-red-500 text-white p-1"
@@ -51,6 +77,13 @@ function ExpenseEditor() {
             >
                 Add Expense
             </button>
+            <button
+                onClick={saveExpensesToDB}
+                className="bg-green-500 text-white p-2"
+            >
+                Save Expenses
+            </button>
+            {message && <p>{message}</p>}
         </div>
     );
 }
