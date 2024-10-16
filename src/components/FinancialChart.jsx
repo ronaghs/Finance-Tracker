@@ -28,27 +28,43 @@ const FinancialChart = ({
         }]
     };
 
+    // Function to check if all values in an array are zero
+    const allValuesAreZero = (totals) => {
+        return totals.every(value => value === 0);
+    };
+
+    const hasNoIncome = allValuesAreZero(incomeTotals);
+    const hasNoExpenses = allValuesAreZero(expenseTotals);
+
     return (
         <div>
-            <LineChart
-                months={months}
-                incomeTotals={incomeTotals}
-                expenseTotals={expenseTotals}
-                netIncomeTotals={netIncomeTotals}
-            />
+            {hasNoIncome && hasNoExpenses ? (
+                <div className="text-center">
+                    <p className="text-lg">You have no income or expenses to display. Please press the buttons below to add income or expenses.</p>
+                </div>
+            ) : (
+                <>
+                    <LineChart
+                        months={months}
+                        incomeTotals={incomeTotals}
+                        expenseTotals={expenseTotals}
+                        netIncomeTotals={netIncomeTotals}
+                    />
 
-            <div className="mt-4 pie-charts">
-                {selectedIncome.length > 0 || selectedExpenses.length > 0 ? (
-                    <>
-                        <PieChart data={incomePieData} title={`Income Breakdown for ${selectedMonth}`} />
-                        <PieChart data={expensesPieData} title={`Expenses Breakdown for ${selectedMonth}`} />
-                    </>
-                ) : (
-                    <div className="text-center">
-                        <p className="text-lg">You have no income or expenses for {selectedMonth}. Please press the buttons below to add income or expenses.</p>
+                    <div className="mt-4 pie-charts">
+                        {selectedIncome.length > 0 || selectedExpenses.length > 0 ? (
+                            <>
+                                <PieChart data={incomePieData} title={`Income Breakdown for ${selectedMonth}`} />
+                                <PieChart data={expensesPieData} title={`Expenses Breakdown for ${selectedMonth}`} />
+                            </>
+                        ) : (
+                            <div className="text-center">
+                                <p className="text-lg">You have no income or expenses for {selectedMonth}. Please press the buttons below to add income or expenses.</p>
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
+                </>
+            )}
         </div>
     );
 };
