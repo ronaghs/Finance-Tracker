@@ -24,7 +24,7 @@ function ExpenseEditor() {
             for (let expense of expenses) {
                 await addDoc(collection(db, "expenses"), {
                     name: expense.name,
-                    value: expense.value,
+                    value: Number(expense.value),
                     date: expense.date
                 });
             }
