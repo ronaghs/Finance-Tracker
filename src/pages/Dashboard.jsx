@@ -29,7 +29,6 @@ ChartJS.register(
 );
 
 function Dashboard() {
-    //const monthlyData = [];
     const { monthlyData, loading, error } = GetMonthlyData();
     const [selectedMonth, setSelectedMonth] = useState("January");
 
@@ -52,8 +51,8 @@ function Dashboard() {
         return { months, incomeTotals, expenseTotals, netIncomeTotals };
     };
 
-    //if (loading) return <div>Loading...</div>; // Loading state
-    //if (error) return <div>Error: {error.message}</div>; // Error state
+    if (loading) return <div>Loading...</div>; // Loading state
+    if (error) return <div>Error: {error.message}</div>; // Error state
 
     const { months, incomeTotals, expenseTotals, netIncomeTotals } = getMonthlyTotals();
     const selectedIncome = monthlyData[selectedMonth]?.income || [];
