@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import IncomeEditor from "../components/IncomeEditor";
 import ExpenseEditor from "../components/ExpenseEditor";
 import FinancialChart from "../components/FinancialChart";
+import GetMonthlyData from "../hooks/GetMonthlyData";
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -28,45 +29,21 @@ ChartJS.register(
 );
 
 function Dashboard() {
-    const [monthlyData, setMonthlyData] = useState({});
+    //const monthlyData = [];
+    const { monthlyData, loading, error } = GetMonthlyData();
     const [selectedMonth, setSelectedMonth] = useState("January");
 
     // Popup state
     const [isIncomePopupOpen, setIncomePopupOpen] = useState(false);
     const [isExpensePopupOpen, setExpensePopupOpen] = useState(false);
 
-    // Change this when database is implemented
-    useEffect(() => {
-        const fetchData = () => {
-            const defaultMonthlyData = {
-                January: { income: [{ name: "Job Salary", value: 5000 }, { name: "Freelance", value: 1500 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Groceries", value: 300 }] },
-                February: { income: [{ name: "Job Salary", value: 5000 }, { name: "Side Business", value: 2000 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Utilities", value: 200 }] },
-                March: { income: [{ name: "Job Salary", value: 5000 }, { name: "Freelance", value: 1500 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Groceries", value: 300 }] },
-                April: { income: [{ name: "Job Salary", value: 5000 }, { name: "Side Business", value: 2000 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Utilities", value: 200 }] },
-                May: { income: [{ name: "Job Salary", value: 5000 }, { name: "Freelance", value: 1500 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Groceries", value: 300 }] },
-                June: { income: [{ name: "Job Salary", value: 5000 }, { name: "Side Business", value: 2000 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Utilities", value: 200 }] },
-                July: { income: [{ name: "Job Salary", value: 5000 }, { name: "Freelance", value: 1500 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Groceries", value: 300 }] },
-                August: { income: [{ name: "Job Salary", value: 5000 }, { name: "Side Business", value: 2000 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Utilities", value: 200 }] },
-                September: { income: [{ name: "Job Salary", value: 5000 }, { name: "Freelance", value: 1500 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Groceries", value: 300 }] },
-                October: { income: [{ name: "Job Salary", value: 5000 }, { name: "Side Business", value: 2000 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Utilities", value: 200 }] },
-                November: { income: [{ name: "Job Salary", value: 5000 }, { name: "Side Business", value: 2000 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Utilities", value: 200 }] },
-                December: { income: [{ name: "Job Salary", value: 5000 }, { name: "Side Business", value: 2000 }], expenses: [{ name: "Rent", value: 1200 }, { name: "Utilities", value: 200 }] }
-            };
-
-            setMonthlyData(defaultMonthlyData);
-        };
-
-        fetchData();
-    }, []);
-    //-----------------------------------------
-
     const getMonthlyTotals = () => {
         const months = Object.keys(monthlyData);
         const incomeTotals = months.map(month =>
-            monthlyData[month]?.income.reduce((acc, item) => acc + item.value, 0) || 0
+            monthlyData[month]?.income.reduce((acc, item) => acc + Number(item.value), 0) || 0 // Convert to number
         );
         const expenseTotals = months.map(month =>
-            monthlyData[month]?.expenses.reduce((acc, item) => acc + item.value, 0) || 0
+            monthlyData[month]?.expenses.reduce((acc, item) => acc + Number(item.value), 0) || 0 // Convert to number
         );
         const netIncomeTotals = months.map((month, index) =>
             incomeTotals[index] - expenseTotals[index]
@@ -74,6 +51,9 @@ function Dashboard() {
 
         return { months, incomeTotals, expenseTotals, netIncomeTotals };
     };
+
+    //if (loading) return <div>Loading...</div>; // Loading state
+    //if (error) return <div>Error: {error.message}</div>; // Error state
 
     const { months, incomeTotals, expenseTotals, netIncomeTotals } = getMonthlyTotals();
     const selectedIncome = monthlyData[selectedMonth]?.income || [];

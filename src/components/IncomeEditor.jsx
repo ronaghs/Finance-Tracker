@@ -24,7 +24,7 @@ function IncomeEditor() {
             for (let inc of income) {
                 await addDoc(collection(db, "incomes"), {
                     name: inc.name,
-                    value: inc.value,
+                    value: Number(inc.value),
                     date: inc.date
                 });
             }
