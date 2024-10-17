@@ -13,7 +13,7 @@ import {
     Title,
     Tooltip,
     Legend,
-    ArcElement, // Add this for Pie charts
+    ArcElement,
 } from 'chart.js';
 
 // Register chart components
@@ -25,24 +25,36 @@ ChartJS.register(
     Title,
     Tooltip,
     Legend,
-    ArcElement // Register for Pie charts
+    ArcElement
 );
 
 function Dashboard() {
     const { monthlyData, loading, error } = GetMonthlyData();
-    const [selectedMonth, setSelectedMonth] = useState("January");
+    const [selectedMonth, setSelectedMonth] = useState("October");
 
     // Popup state
     const [isIncomePopupOpen, setIncomePopupOpen] = useState(false);
     const [isExpensePopupOpen, setExpensePopupOpen] = useState(false);
+    const [editIncome, setEditIncome] = useState(null);
+    const [editExpense, setEditExpense] = useState(null);
+
+    const openIncomeEditor = (income = null) => {
+        setEditIncome(income);
+        setIncomePopupOpen(true);
+    };
+
+    const openExpenseEditor = (expense = null) => {
+        setEditExpense(expense);
+        setExpensePopupOpen(true);
+    };
 
     const getMonthlyTotals = () => {
         const months = Object.keys(monthlyData);
         const incomeTotals = months.map(month =>
-            monthlyData[month]?.income.reduce((acc, item) => acc + Number(item.value), 0) || 0 // Convert to number
+            monthlyData[month]?.income.reduce((acc, item) => acc + Number(item.value), 0) || 0
         );
         const expenseTotals = months.map(month =>
-            monthlyData[month]?.expenses.reduce((acc, item) => acc + Number(item.value), 0) || 0 // Convert to number
+            monthlyData[month]?.expenses.reduce((acc, item) => acc + Number(item.value), 0) || 0
         );
         const netIncomeTotals = months.map((month, index) =>
             incomeTotals[index] - expenseTotals[index]
@@ -51,8 +63,8 @@ function Dashboard() {
         return { months, incomeTotals, expenseTotals, netIncomeTotals };
     };
 
-    if (loading) return <div>Loading...</div>; // Loading state
-    if (error) return <div>Error: {error.message}</div>; // Error state
+    if (loading) return <div>Loading...</div>;
+    if (error) return <div>Error: {error.message}</div>;
 
     const { months, incomeTotals, expenseTotals, netIncomeTotals } = getMonthlyTotals();
     const selectedIncome = monthlyData[selectedMonth]?.income || [];
@@ -63,7 +75,6 @@ function Dashboard() {
             <ResponsiveAppBar />
             <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
 
-            {/* Month Selector */}
             <div className="mt-4">
                 <label htmlFor="month-selector" className="mr-2">Select Month:</label>
                 <select
@@ -78,7 +89,6 @@ function Dashboard() {
                 </select>
             </div>
 
-            {/* Use the FinancialChart component */}
             <FinancialChart
                 months={months}
                 incomeTotals={incomeTotals}
@@ -89,47 +99,55 @@ function Dashboard() {
                 selectedExpenses={selectedExpenses}
             />
 
-            <div>
-                {/* Buttons to open popups */}
-                <div className="mt-4">
-                    <button onClick={() => setIncomePopupOpen(true)} className="btn">
-                        Add Income
-                    </button>
-                    <button onClick={() => setExpensePopupOpen(true)} className="btn ml-4">
-                        Add Expense
-                    </button>
-                </div>
-
-                {/* Income Editor Popup */}
-                {isIncomePopupOpen && (
-                    <div className="popup">
-                        <div className="popup-content">
-                            <button
-                                onClick={() => setIncomePopupOpen(false)}
-                                className="close-button"
-                            >
-                                &times; {/* This represents the "X" */}
-                            </button>
-                            <IncomeEditor onClose={() => setIncomePopupOpen(false)} />
-                        </div>
-                    </div>
-                )}
-
-                {/* Expense Editor Popup */}
-                {isExpensePopupOpen && (
-                    <div className="popup">
-                        <div className="popup-content">
-                            <button
-                                onClick={() => setExpensePopupOpen(false)}
-                                className="close-button"
-                            >
-                                &times; {/* This represents the "X" */}
-                            </button>
-                            <ExpenseEditor onClose={() => setExpensePopupOpen(false)} />
-                        </div>
-                    </div>
-                )}
+            <div className="mt-4">
+                <button onClick={() => openIncomeEditor()} className="btn">
+                    Add Income
+                </button>
+                <button onClick={() => openExpenseEditor()} className="btn ml-4">
+                    Add Expense
+                </button>
             </div>
+
+            {selectedIncome.map((income) => (
+                <div key={income.id}>
+                    <span>Income: {income.name} {income.value} {income.date} </span>
+                    <button onClick={() => openIncomeEditor(income)}>Edit</button>
+                </div>
+            ))}
+            {selectedExpenses.map((expense) => (
+                <div key={expense.id}>
+                    <span>Expense: {expense.name} {expense.value} {expense.date} </span>
+                    <button onClick={() => openExpenseEditor(expense)}>Edit</button>
+                </div>
+            ))}
+
+            {isIncomePopupOpen && (
+                <div className="popup">
+                    <div className="popup-content">
+                        <button
+                            onClick={() => setIncomePopupOpen(false)}
+                            className="close-button"
+                        >
+                            &times;
+                        </button>
+                        <IncomeEditor income={editIncome} onClose={() => setIncomePopupOpen(false)} />
+                    </div>
+                </div>
+            )}
+
+            {isExpensePopupOpen && (
+                <div className="popup">
+                    <div className="popup-content">
+                        <button
+                            onClick={() => setExpensePopupOpen(false)}
+                            className="close-button"
+                        >
+                            &times;
+                        </button>
+                        <ExpenseEditor expense={editExpense} onClose={() => setExpensePopupOpen(false)} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
