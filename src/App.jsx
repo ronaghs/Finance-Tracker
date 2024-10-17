@@ -16,7 +16,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/goals" element={<Goals />} />
+        <Route path="/savingsgoals" element={<Goals />} />
         <Route path="/password-recovery" element={<PasswordRecovery />} />{" "}
         {/* Protected Routes */}
         <Route element={<ProtectedRoutes />}>

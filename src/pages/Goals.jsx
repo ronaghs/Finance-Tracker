@@ -232,7 +232,6 @@ const FinancialGoals = () => {
           );
         })}
       </div>
-
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>
           {editingGoal !== null ? "Edit Goal" : "Add Goal"}
