@@ -26,8 +26,8 @@ function ExpenseEditor({ expense, onClose }) {
         try {
             if (expense) {
                 const expenseDoc = doc(db, "expenses", expense.id);
-                // Exclude the id property from the data being updated
                 const { id, ...dataToUpdate } = expenseData;
+                console.log("Updating expense with id:", id);
                 await updateDoc(expenseDoc, dataToUpdate);
             } else {
                 await addDoc(collection(db, "expenses"), {
