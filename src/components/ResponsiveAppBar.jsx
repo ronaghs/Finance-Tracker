@@ -22,6 +22,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 const pages = [
   { label: "Dashboard", path: "/dashboard" },
+  { label: "Goals", path: "/goals" },
   { label: "Expenses", path: "/expenses" },
   { label: "Income", path: "/income" },
 ];

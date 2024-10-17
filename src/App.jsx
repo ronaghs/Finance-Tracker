@@ -6,6 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import Dashboard from "./pages/Dashboard";
 import PasswordRecovery from "./components/PasswordRecovery";
+import Goals from "./pages/Goals";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/goals" element={<Goals />} />
         <Route path="/password-recovery" element={<PasswordRecovery />} />{" "}
         {/* Protected Routes */}
         <Route element={<ProtectedRoutes />}>
