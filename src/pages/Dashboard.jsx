@@ -30,7 +30,7 @@ ChartJS.register(
 
 function Dashboard() {
     const { monthlyData, loading, error } = GetMonthlyData();
-    const [selectedMonth, setSelectedMonth] = useState("January");
+    const [selectedMonth, setSelectedMonth] = useState("October");
 
     // Popup state
     const [isIncomePopupOpen, setIncomePopupOpen] = useState(false);
@@ -110,13 +110,13 @@ function Dashboard() {
 
             {selectedIncome.map((income) => (
                 <div key={income.id}>
-                    <span>{income.name}: {income.value} {income.date}</span>
+                    <span>Income: {income.name} {income.value} {income.date} </span>
                     <button onClick={() => openIncomeEditor(income)}>Edit</button>
                 </div>
             ))}
             {selectedExpenses.map((expense) => (
                 <div key={expense.id}>
-                    <span>{expense.name}: {expense.value} {expense.date}</span>
+                    <span>Expense: {expense.name} {expense.value} {expense.date} </span>
                     <button onClick={() => openExpenseEditor(expense)}>Edit</button>
                 </div>
             ))}

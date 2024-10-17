@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { db } from "../firebase/firebaseconfig";
 import { collection, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
 
@@ -14,19 +15,25 @@ function ExpenseEditor({ expense, onClose }) {
 
     const handleChange = (event) => {
         const { name, value } = event.target;
-        setExpenseData((prev) => ({ ...prev, [name]: value }));
+        if (name === "value") {
+            setExpenseData((prev) => ({ ...prev, [name]: Number(value) })); // Convert to number
+        } else {
+            setExpenseData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
     const saveExpenseToDB = async () => {
         try {
             if (expense) {
                 const expenseDoc = doc(db, "expenses", expense.id);
-                await updateDoc(expenseDoc, expenseData);
+                // Exclude the id property from the data being updated
+                const { id, ...dataToUpdate } = expenseData;
+                await updateDoc(expenseDoc, dataToUpdate);
             } else {
                 await addDoc(collection(db, "expenses"), {
                     name: expenseData.name,
                     value: Number(expenseData.value),
-                    date: expenseData.date
+                    date: expenseData.date,
                 });
             }
             setMessage("Expense saved successfully!");
@@ -89,6 +96,17 @@ function ExpenseEditor({ expense, onClose }) {
         </div>
     );
 }
+
+// Define PropTypes for the component
+ExpenseEditor.propTypes = {
+    expense: PropTypes.shape({
+        id: PropTypes.string.isRequired, // id is required if expense exists
+        name: PropTypes.string.isRequired,
+        value: PropTypes.number.isRequired,
+        date: PropTypes.string.isRequired,
+    }),
+    onClose: PropTypes.func.isRequired, // onClose is required and should be a function
+};
 
 export default ExpenseEditor;
 

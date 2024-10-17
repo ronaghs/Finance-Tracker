@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { db } from "../firebase/firebaseconfig";
 import { collection, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
 
@@ -14,19 +15,25 @@ function IncomeEditor({ income, onClose }) {
 
     const handleChange = (event) => {
         const { name, value } = event.target;
-        setIncomeData((prev) => ({ ...prev, [name]: value }));
+        if (name === "value") {
+            setIncomeData((prev) => ({ ...prev, [name]: Number(value) })); // Convert to number
+        } else {
+            setIncomeData((prev) => ({ ...prev, [name]: value }));
+        }
     };
 
     const saveIncomeToDB = async () => {
         try {
             if (income) {
                 const incomeDoc = doc(db, "incomes", income.id);
-                await updateDoc(incomeDoc, incomeData);
+                const { id, ...dataToUpdate } = incomeData;
+                console.log("Updating expense with id:", id);
+                await updateDoc(incomeDoc, dataToUpdate);
             } else {
                 await addDoc(collection(db, "incomes"), {
                     name: incomeData.name,
                     value: Number(incomeData.value),
-                    date: incomeData.date
+                    date: incomeData.date,
                 });
             }
             setMessage("Income saved successfully!");
@@ -89,5 +96,16 @@ function IncomeEditor({ income, onClose }) {
         </div>
     );
 }
+
+// Define PropTypes for the component
+IncomeEditor.propTypes = {
+    income: PropTypes.shape({
+        id: PropTypes.string.isRequired, // id is required if income exists
+        name: PropTypes.string.isRequired,
+        value: PropTypes.number.isRequired,
+        date: PropTypes.string.isRequired,
+    }),
+    onClose: PropTypes.func.isRequired, // onClose is required and should be a function
+};
 
 export default IncomeEditor;
