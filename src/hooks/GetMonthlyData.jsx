@@ -37,7 +37,7 @@ const GetMonthlyData = () => {
                         const month = date.toLocaleString('default', { month: 'long', timeZone: 'UTC' });
 
                         if (defaultMonthlyData[month]) {
-                            defaultMonthlyData[month].income.push({ name: data.name, value: data.value });
+                            defaultMonthlyData[month].income.push({ id: doc.id, name: data.name, value: data.value, date: data.date });
                         } else {
                             console.warn("Invalid Month:", month);
                         }
@@ -57,7 +57,7 @@ const GetMonthlyData = () => {
                         const month = date.toLocaleString('default', { month: 'long', timeZone: 'UTC' });
 
                         if (defaultMonthlyData[month]) {
-                            defaultMonthlyData[month].expenses.push({ name: data.name, value: data.value });
+                            defaultMonthlyData[month].expenses.push({ id:doc.id, name: data.name, value: data.value, date: data.date });
                         } else {
                             console.warn("Invalid Month:", month);
                         }
