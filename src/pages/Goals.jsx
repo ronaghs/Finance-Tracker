@@ -156,7 +156,6 @@ const FinancialGoals = () => {
     if (newSaved >= goal.amount) {
       setShowConfetti(true); // Show confetti
       setTimeout(() => setShowConfetti(false), 5000); // Hide confetti after 5 seconds
-      // alert("🎉 Congratulations! You've reached your goal! 🎉");
     }
 
     // Update the goal's saved amount and reset the contribution
