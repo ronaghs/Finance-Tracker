@@ -219,7 +219,7 @@ const FinancialGoals = () => {
                   </Typography>
                   <span className="mx-2 text-gray-400">|</span>
                   <Typography className="text-gray-800 font-bold flex items-center">
-                    🐖 Saved:{" "}
+                    💰 Saved:{" "}
                     <span className="text-green-600 ml-1">${goal.saved}</span>
                   </Typography>
                 </div>
@@ -262,10 +262,11 @@ const FinancialGoals = () => {
                     startAdornment: (
                       <InputAdornment position="start">$</InputAdornment>
                     ),
+                    inputProps: { min: 0 },
                   }}
-                  inputProps={{ min: 0 }}
                   className="mr-2"
                 />
+
                 <Tooltip title="Add Contribution">
                   <IconButton
                     onClick={() => handleContribution(index)}
