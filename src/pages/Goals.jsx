@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   TextField,
   Button,
@@ -20,10 +20,21 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import Confetti from "react-confetti";
+import { db, auth } from "../firebase/firebaseconfig";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+  deleteDoc,
+  query,
+  where,
+} from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth"; // Import auth state listener
 
 const FinancialGoals = () => {
-  // State to manage goals and the new goal being added/edited
-  const [goals, setGoals] = useState([]);
+  const [goals, setGoals] = useState([]); // Stores all the user-specific goals
   const [newGoal, setNewGoal] = useState({
     amount: "",
     category: "",
@@ -31,14 +42,45 @@ const FinancialGoals = () => {
     saved: 0,
     contribution: 0,
   });
-  const [open, setOpen] = useState(false); // Manages the dialog visibility
-  const [editingGoal, setEditingGoal] = useState(null); // Track which goal is being edited
-  const [showConfetti, setShowConfetti] = useState(false); // Flag for confetti display
+  const [open, setOpen] = useState(false); // Controls the goal dialog
+  const [editingGoal, setEditingGoal] = useState(null); // Track if a goal is being edited
+  const [showConfetti, setShowConfetti] = useState(false); // Trigger confetti when a goal is reached
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Fetch goals from Firestore for the logged-in user
+        const fetchGoals = async () => {
+          try {
+            const q = query(
+              collection(db, "goals"),
+              where("userId", "==", user.uid)
+            );
+            const querySnapshot = await getDocs(q);
+            const fetchedGoals = querySnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+            setGoals(fetchedGoals); // Set fetched goals to the state
+          } catch (error) {
+            console.error("Error fetching goals:", error);
+          }
+        };
+        fetchGoals();
+      } else {
+        console.error("No authenticated user found.");
+        setGoals([]); // Clear goals if no user is found
+      }
+    });
+
+    // Cleanup listener on unmount
+    return () => unsubscribe();
+  }, []);
 
   // Open the Add/Edit Goal dialog
   const handleOpen = () => setOpen(true);
 
-  // Close dialog and reset newGoal state
+  // Close the prompt and reset the newGoal state
   const handleClose = () => {
     setOpen(false);
     setNewGoal({
@@ -51,31 +93,47 @@ const FinancialGoals = () => {
     setEditingGoal(null);
   };
 
-  // Save a new goal or update an existing one
-  const handleSave = () => {
+  // Save or update a goal in Firestore
+  const handleSave = async () => {
+    const userId = auth.currentUser?.uid; // Get the current user's ID
+    if (!userId) return; // Exit if user is not logged in
+
     if (editingGoal !== null) {
-      // Update existing goal
-      const updatedGoals = goals.map((goal, index) =>
-        index === editingGoal ? newGoal : goal
+      // Update an existing goal
+      const goalDocRef = doc(db, "goals", editingGoal);
+      await updateDoc(goalDocRef, { ...newGoal, userId });
+
+      // Update the state to reflect the edited goal
+      const updatedGoals = goals.map((goal) =>
+        goal.id === editingGoal ? { id: editingGoal, ...newGoal, userId } : goal
       );
-      setGoals(updatedGoals);
+      setGoals(updatedGoals); // Update the state with the edited goal
     } else {
-      // Add new goal
-      setGoals([...goals, newGoal]);
+      // Add a new goal to Firestore
+      const docRef = await addDoc(collection(db, "goals"), {
+        ...newGoal,
+        userId,
+      });
+
+      // Add the new goal to the state
+      setGoals([...goals, { id: docRef.id, ...newGoal, userId }]); // Append new goal to the existing state
     }
-    handleClose();
+
+    handleClose(); // Close the prompt
   };
 
-  // Goal data for editing
+  // Edit goal handler
   const handleEdit = (index) => {
-    setEditingGoal(index);
-    setNewGoal(goals[index]);
-    setOpen(true);
+    setEditingGoal(goals[index].id); // Track the goal being edited
+    setNewGoal(goals[index]); // Pre-fill the form with the selected goal data
+    setOpen(true); // Open the prompt
   };
 
-  // Delete a goal from the list
-  const handleDelete = (index) => {
-    setGoals(goals.filter((_, i) => i !== index));
+  // Delete goal handler (removes the goal from Firestore and state)
+  const handleDelete = async (index) => {
+    const goalId = goals[index].id; // Get the goal ID
+    await deleteDoc(doc(db, "goals", goalId)); // Delete the goal in Firestore
+    setGoals(goals.filter((_, i) => i !== index)); // Remove the goal from state
   };
 
   // Handle the input change for contribution amount
@@ -83,40 +141,47 @@ const FinancialGoals = () => {
     const updatedGoals = goals.map((goal, i) =>
       i === index ? { ...goal, contribution: amount } : goal
     );
+    setGoals(updatedGoals); // Update contribution in the state
+  };
+
+  // Add the contribution to the saved amount and check if the goal is met
+  const handleContribution = async (index) => {
+    const userId = auth.currentUser?.uid; // Get the current user's ID
+    if (!userId) return;
+
+    const goal = goals[index]; // Get the goal being updated
+    const newSaved = goal.saved + goal.contribution; // Calculate new saved value
+
+    // If the goal is met, show confetti and celebrate
+    if (newSaved >= goal.amount) {
+      setShowConfetti(true); // Show confetti
+      setTimeout(() => setShowConfetti(false), 5000); // Hide confetti after 5 seconds
+      // alert("🎉 Congratulations! You've reached your goal! 🎉");
+    }
+
+    // Update the goal's saved amount and reset the contribution
+    const updatedGoal = { ...goal, saved: newSaved, contribution: 0 };
+    await updateDoc(doc(db, "goals", goal.id), updatedGoal); // Update Firestore
+
+    // Update the goal in state
+    const updatedGoals = goals.map((g, i) => (i === index ? updatedGoal : g));
     setGoals(updatedGoals);
   };
 
-  // Apply the contribution amount and check if the goal is met
-  const handleContribution = (index) => {
-    const updatedGoals = goals.map((goal, i) => {
-      if (i === index) {
-        const newSaved = goal.saved + goal.contribution;
-        if (newSaved >= goal.amount) {
-          setShowConfetti(true); // Show confetti on goal completion
-          setTimeout(() => setShowConfetti(false), 5000); // Hide confetti after 5 seconds
-          alert("🎉 Congratulations! You've reached your goal! 🎉");
-        }
-        return { ...goal, saved: newSaved, contribution: 0 }; // Reset contribution after adding
-      }
-      return goal;
-    });
-    setGoals(updatedGoals);
-  };
-
-  // Calculate remaining days until the goal end date
+  // Calculate the remaining days until the goal's end date
   const calculateDaysRemaining = (endDate) => {
     const today = new Date();
     const goalDate = new Date(endDate);
     const timeDifference = goalDate - today;
-    const daysRemaining = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
-    return daysRemaining >= 0 ? daysRemaining : 0;
+    const daysRemaining = Math.ceil(timeDifference / (1000 * 60 * 60 * 24)); // Convert ms to days
+    return daysRemaining >= 0 ? daysRemaining : 0; // Return 0 if past due date
   };
 
-  // Dynamically sets progress bar color based on progress
+  // Dynamically set the progress bar color based on progress percentage
   const getProgressBarColor = (progress) => {
     if (progress >= 75) return "#4caf50"; // Green for 75%+
-    if (progress >= 50) return "#ffeb3b"; // Yellow for 50%-75%
-    return "#f44336"; // Red for below 50%
+    if (progress >= 30) return "#ffeb3b"; // Yellow for 30%-75%
+    return "#f44336"; // Red for below 30%
   };
 
   return (
@@ -154,9 +219,8 @@ const FinancialGoals = () => {
                     <span className="text-blue-600 ml-1">${goal.amount}</span>
                   </Typography>
                   <span className="mx-2 text-gray-400">|</span>
-
                   <Typography className="text-gray-800 font-bold flex items-center">
-                    💵 Saved:{" "}
+                    🐖 Saved:{" "}
                     <span className="text-green-600 ml-1">${goal.saved}</span>
                   </Typography>
                 </div>
@@ -232,6 +296,7 @@ const FinancialGoals = () => {
           );
         })}
       </div>
+
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>
           {editingGoal !== null ? "Edit Goal" : "Add Goal"}
