@@ -45,6 +45,7 @@ const FinancialGoals = () => {
   const [open, setOpen] = useState(false); // Controls the goal dialog
   const [editingGoal, setEditingGoal] = useState(null); // Track if a goal is being edited
   const [showConfetti, setShowConfetti] = useState(false); // Trigger confetti when a goal is reached
+  const [dateError, setDateError] = useState(false); // Track if the date is valid
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -91,10 +92,30 @@ const FinancialGoals = () => {
       contribution: 0,
     });
     setEditingGoal(null);
+    setDateError(false); // Reset date error when closing the dialog
+  };
+
+  // Validate if the selected date is in the past
+  const handleDateChange = (e) => {
+    const selectedDate = new Date(e.target.value);
+    const today = new Date();
+
+    // Compare the selected date to today's date
+    if (selectedDate < today) {
+      setDateError(true); // Invalid date, show error
+    } else {
+      setDateError(false); // Valid date, hide error
+      setNewGoal({ ...newGoal, endDate: e.target.value });
+    }
   };
 
   // Save or update a goal in Firestore
   const handleSave = async () => {
+    if (dateError) {
+      alert("Please pick a valid date!"); // Prevent saving if date is invalid
+      return;
+    }
+
     const userId = auth.currentUser?.uid; // Get the current user's ID
     if (!userId) return; // Exit if user is not logged in
 
@@ -129,11 +150,19 @@ const FinancialGoals = () => {
     setOpen(true); // Open the prompt
   };
 
-  // Delete goal handler (removes the goal from Firestore and state)
+  // Delete goal handler (prompts for confirmation before removing the goal)
   const handleDelete = async (index) => {
-    const goalId = goals[index].id; // Get the goal ID
-    await deleteDoc(doc(db, "goals", goalId)); // Delete the goal in Firestore
-    setGoals(goals.filter((_, i) => i !== index)); // Remove the goal from state
+    const goal = goals[index]; // Get the goal to delete
+
+    // Confirmation dialog to ensure the user wants to delete the goal
+    const confirmDelete = window.confirm(`Delete this goal?`);
+
+    if (confirmDelete) {
+      // Proceed with deletion if user confirms
+      const goalId = goal.id; // Get the goal ID
+      await deleteDoc(doc(db, "goals", goalId)); // Delete the goal in Firestore
+      setGoals(goals.filter((_, i) => i !== index)); // Remove the goal from state
+    }
   };
 
   // Handle the input change for contribution amount
@@ -183,6 +212,16 @@ const FinancialGoals = () => {
     return "#f44336"; // Red for below 30%
   };
 
+  // Function to format the selected date into a readable format
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen p-6 space-y-4">
       <ResponsiveAppBar />
@@ -223,16 +262,18 @@ const FinancialGoals = () => {
                     <span className="text-green-600 ml-1">${goal.saved}</span>
                   </Typography>
                 </div>
-                <Typography
-                  className={`${
-                    daysRemaining <= 3 ? "text-red-500" : "text-gray-800"
-                  } font-bold mb-2 flex items-center`}
-                >
-                  ⏳{" "}
-                  {daysRemaining > 0
-                    ? `${daysRemaining} days remaining`
-                    : `Goal Ended`}
-                </Typography>
+                <Tooltip title={`Goal Date: ${formatDate(goal.endDate)}`}>
+                  <Typography
+                    className={`${
+                      daysRemaining <= 3 ? "text-red-500" : "text-gray-800"
+                    } font-bold mb-2 flex items-center`}
+                  >
+                    ⏳{" "}
+                    {daysRemaining > 0
+                      ? `${daysRemaining} days remaining`
+                      : `Goal Ended`}
+                  </Typography>
+                </Tooltip>
                 <LinearProgress
                   variant="determinate"
                   value={cappedProgress}
@@ -302,13 +343,17 @@ const FinancialGoals = () => {
           {editingGoal !== null ? "Edit Goal" : "Add Goal"}
         </DialogTitle>
         <DialogContent className="space-y-2">
+          {/* Fix for 0 persisting in amount field, preventing deletion to clear the input box. */}
           <TextField
             label="Amount"
             type="number"
             fullWidth
-            value={newGoal.amount}
+            value={newGoal.amount === 0 ? "" : newGoal.amount} // Show empty string if 0
             onChange={(e) =>
-              setNewGoal({ ...newGoal, amount: Number(e.target.value) })
+              setNewGoal({
+                ...newGoal,
+                amount: e.target.value === "" ? 0 : Number(e.target.value), // Set amount to 0 if field is cleared
+              })
             }
             InputProps={{
               startAdornment: (
@@ -331,14 +376,14 @@ const FinancialGoals = () => {
             fullWidth
             InputLabelProps={{ shrink: true }}
             value={newGoal.endDate}
-            onChange={(e) =>
-              setNewGoal({ ...newGoal, endDate: e.target.value })
-            }
+            onChange={handleDateChange}
+            error={dateError} // Show error if the date is invalid
+            helperText={dateError ? "Pick a valid date" : ""}
           />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSave} variant="contained">
+          <Button onClick={handleSave} variant="contained" disabled={dateError}>
             Save
           </Button>
         </DialogActions>
