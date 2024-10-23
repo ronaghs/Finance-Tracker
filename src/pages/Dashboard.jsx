@@ -29,8 +29,8 @@ ChartJS.register(
 );
 
 function Dashboard() {
-    const { monthlyData, loading, error } = GetMonthlyData();
-    const [selectedMonth, setSelectedMonth] = useState("October");
+    const { monthlyDataByYear, loading, error } = GetMonthlyData();
+    const [selected, setSelected] = useState("October 2024");
 
     // Popup state
     const [isIncomePopupOpen, setIncomePopupOpen] = useState(false);
@@ -49,16 +49,33 @@ function Dashboard() {
     };
 
     const getMonthlyTotals = () => {
-        const months = Object.keys(monthlyData);
-        const incomeTotals = months.map(month =>
-            monthlyData[month]?.income.reduce((acc, item) => acc + Number(item.value), 0) || 0
-        );
-        const expenseTotals = months.map(month =>
-            monthlyData[month]?.expenses.reduce((acc, item) => acc + Number(item.value), 0) || 0
-        );
-        const netIncomeTotals = months.map((month, index) =>
-            incomeTotals[index] - expenseTotals[index]
-        );
+        if (!monthlyDataByYear) return { months: [], incomeTotals: [], expenseTotals: [], netIncomeTotals: [] };
+        
+        const years = Object.keys(monthlyDataByYear); // Get all years
+        const incomeTotals = [];
+        const expenseTotals = [];
+        const netIncomeTotals = [];
+        const months = [];
+
+        years.forEach(year => {
+            const monthsInYear = Object.keys(monthlyDataByYear[year]); // Get all months for the current year
+
+            monthsInYear.forEach(month => {
+                // Push the year and month combination to the months array
+                months.push(`${month} ${year}`);
+
+                // Calculate income total for the current month
+                const incomeTotal = monthlyDataByYear[year][month]?.income.reduce((acc, item) => acc + Number(item.value), 0) || 0;
+                incomeTotals.push(incomeTotal);
+
+                // Calculate expense total for the current month
+                const expenseTotal = monthlyDataByYear[year][month]?.expenses.reduce((acc, item) => acc + Number(item.value), 0) || 0;
+                expenseTotals.push(expenseTotal);
+
+                // Calculate net income (income - expenses)
+                netIncomeTotals.push(incomeTotal - expenseTotal);
+            });
+        });
 
         return { months, incomeTotals, expenseTotals, netIncomeTotals };
     };
@@ -67,8 +84,12 @@ function Dashboard() {
     if (error) return <div>Error: {error.message}</div>;
 
     const { months, incomeTotals, expenseTotals, netIncomeTotals } = getMonthlyTotals();
-    const selectedIncome = monthlyData[selectedMonth]?.income || [];
-    const selectedExpenses = monthlyData[selectedMonth]?.expenses || [];
+
+    const [selectedMonth, selectedYear] = selected.split(" ") || ["", ""]; // Ensure correct fallback
+
+    // Access the selected month's data using both the year and month
+    const selectedIncome = monthlyDataByYear?.[selectedYear]?.[selectedMonth]?.income || [];
+    const selectedExpenses = monthlyDataByYear?.[selectedYear]?.[selectedMonth]?.expenses || [];
 
     return (
         <div className="p-6 bg-gray-100 min-h-screen">
@@ -86,8 +107,8 @@ function Dashboard() {
                     </label>
                     <select
                         id="month-selector"
-                        value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(e.target.value)}
+                        value={selected}
+                        onChange={(e) => setSelected(e.target.value)}
                         className="border border-gray-300 rounded-lg p-2 text-lg w-full md:w-auto"
                     >
                         {months.map((month) => (

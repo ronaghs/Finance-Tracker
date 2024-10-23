@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase/firebaseconfig"; // Adjust the path according to your project structure
+import { db } from "../firebase/firebaseconfig";
 
 const GetMonthlyData = () => {
-    const [monthlyData, setMonthlyData] = useState({});
+    const [monthlyDataByYear, setMonthlyData] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -11,20 +11,7 @@ const GetMonthlyData = () => {
         const fetchData = async () => {
             try {
                 // Initialize empty monthly data
-                const defaultMonthlyData = {
-                    January: { income: [], expenses: [] },
-                    February: { income: [], expenses: [] },
-                    March: { income: [], expenses: [] },
-                    April: { income: [], expenses: [] },
-                    May: { income: [], expenses: [] },
-                    June: { income: [], expenses: [] },
-                    July: { income: [], expenses: [] },
-                    August: { income: [], expenses: [] },
-                    September: { income: [], expenses: [] },
-                    October: { income: [], expenses: [] },
-                    November: { income: [], expenses: [] },
-                    December: { income: [], expenses: [] },
-                };
+                const defaultMonthlyData = {};
 
                 // Fetch incomes
                 try {
@@ -33,11 +20,36 @@ const GetMonthlyData = () => {
                         const data = doc.data();
                         const date = new Date(data.date);
 
-                        // Get the month using UTC methods
+                        // Get the month and year using UTC methods
                         const month = date.toLocaleString('default', { month: 'long', timeZone: 'UTC' });
+                        const year = date.getUTCFullYear();
 
-                        if (defaultMonthlyData[month]) {
-                            defaultMonthlyData[month].income.push({ id: doc.id, name: data.name, value: data.value, date: data.date });
+                        // Initialize the year and month in the data structure if it doesn't exist
+                        if (!defaultMonthlyData[year]) {
+                            defaultMonthlyData[year] = {
+                                January: { income: [], expenses: [] },
+                                February: { income: [], expenses: [] },
+                                March: { income: [], expenses: [] },
+                                April: { income: [], expenses: [] },
+                                May: { income: [], expenses: [] },
+                                June: { income: [], expenses: [] },
+                                July: { income: [], expenses: [] },
+                                August: { income: [], expenses: [] },
+                                September: { income: [], expenses: [] },
+                                October: { income: [], expenses: [] },
+                                November: { income: [], expenses: [] },
+                                December: { income: [], expenses: [] },
+                            };
+                        }
+
+                        // Push the income data into the corresponding year and month
+                        if (defaultMonthlyData[year][month]) {
+                            defaultMonthlyData[year][month].income.push({
+                                id: doc.id,
+                                name: data.name,
+                                value: data.value,
+                                date: data.date,
+                            });
                         } else {
                             console.warn("Invalid Month:", month);
                         }
@@ -53,11 +65,36 @@ const GetMonthlyData = () => {
                         const data = doc.data();
                         const date = new Date(data.date);
 
-                        // Get the month using UTC methods
+                        // Get the month and year using UTC methods
                         const month = date.toLocaleString('default', { month: 'long', timeZone: 'UTC' });
+                        const year = date.getUTCFullYear();
 
-                        if (defaultMonthlyData[month]) {
-                            defaultMonthlyData[month].expenses.push({ id:doc.id, name: data.name, value: data.value, date: data.date });
+                        // Initialize the year and month in the data structure if it doesn't exist
+                        if (!defaultMonthlyData[year]) {
+                            defaultMonthlyData[year] = {
+                                January: { income: [], expenses: [] },
+                                February: { income: [], expenses: [] },
+                                March: { income: [], expenses: [] },
+                                April: { income: [], expenses: [] },
+                                May: { income: [], expenses: [] },
+                                June: { income: [], expenses: [] },
+                                July: { income: [], expenses: [] },
+                                August: { income: [], expenses: [] },
+                                September: { income: [], expenses: [] },
+                                October: { income: [], expenses: [] },
+                                November: { income: [], expenses: [] },
+                                December: { income: [], expenses: [] },
+                            };
+                        }
+
+                        // Push the expense data into the corresponding year and month
+                        if (defaultMonthlyData[year][month]) {
+                            defaultMonthlyData[year][month].expenses.push({
+                                id: doc.id,
+                                name: data.name,
+                                value: data.value,
+                                date: data.date,
+                            });
                         } else {
                             console.warn("Invalid Month:", month);
                         }
@@ -77,8 +114,7 @@ const GetMonthlyData = () => {
 
         fetchData();
     }, []);
-
-    return { monthlyData, loading, error };
+    return { monthlyDataByYear, loading, error };
 };
 
 export default GetMonthlyData;
