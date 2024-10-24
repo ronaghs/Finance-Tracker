@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import IncomeEditor from "../components/IncomeEditor";
 import ExpenseEditor from "../components/ExpenseEditor";
 import FinancialChart from "../components/FinancialChart";
-import GetMonthlyData from "../hooks/GetMonthlyData";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -31,7 +30,6 @@ ChartJS.register(
 );
 
 function Dashboard() {
-  const { monthlyDataByYear, loading, error } = GetMonthlyData();
   const [selected, setSelected] = useState("October 2024");
 
   // Popup state
@@ -59,6 +57,7 @@ function Dashboard() {
           id: doc.id,
           ...doc.data(),
         }));
+
         setIncomes(fetchedIncomes);
 
         // Fetch expenses for the current user
@@ -90,51 +89,63 @@ function Dashboard() {
     setExpensePopupOpen(true);
   };
 
-  const getMonthlyTotals = () => {
-    if (!monthlyDataByYear)
-      return {
-        months: [],
-        incomeTotals: [],
-        expenseTotals: [],
-        netIncomeTotals: [],
-      };
-
-    const years = Object.keys(monthlyDataByYear); // Get all years
+  const { months, incomeTotals, expenseTotals, netIncomeTotals } = useMemo(() => {
     const incomeTotals = [];
     const expenseTotals = [];
     const netIncomeTotals = [];
     const months = [];
 
-    years.forEach((year) => {
-      const monthsInYear = Object.keys(monthlyDataByYear[year]); // Get all months for the current year
+    const allDates = [...incomes, ...expenses].map((item) => {
+      const date = new Date(item.date);
+      const month = date.toLocaleString("default", { month: "long" });
+      const year = date.getFullYear().toString();
+      return `${month} ${year}`;
+    });
 
-      monthsInYear.forEach((month) => {
-        // Push the year and month combination to the months array
-        months.push(`${month} ${year}`);
+    const uniqueMonths = [...new Set(allDates)].sort((a, b) => {
+      const [monthA, yearA] = a.split(" ");
+      const [monthB, yearB] = b.split(" ");
+      return new Date(`${monthA} 1, ${yearA}`) - new Date(`${monthB} 1, ${yearB}`);
+    });
 
-        // Calculate income total for the current month
-        const incomeTotal =
-          monthlyDataByYear[year][month]?.income.reduce(
-            (acc, item) => acc + Number(item.value),
-            0
-          ) || 0;
-        incomeTotals.push(incomeTotal);
+    uniqueMonths.forEach((monthYear) => {
+      const [month, year] = monthYear.split(" ");
 
-        // Calculate expense total for the current month
-        const expenseTotal =
-          monthlyDataByYear[year][month]?.expenses.reduce(
-            (acc, item) => acc + Number(item.value),
-            0
-          ) || 0;
-        expenseTotals.push(expenseTotal);
-
-        // Calculate net income (income - expenses)
-        netIncomeTotals.push(incomeTotal - expenseTotal);
+      const incomesForMonth = incomes.filter((income) => {
+        const incomeDate = new Date(income.date);
+        return (
+          incomeDate.toLocaleString("default", { month: "long" }) === month &&
+          incomeDate.getFullYear().toString() === year
+        );
       });
+
+      const expensesForMonth = expenses.filter((expense) => {
+        const expenseDate = new Date(expense.date);
+        return (
+          expenseDate.toLocaleString("default", { month: "long" }) === month &&
+          expenseDate.getFullYear().toString() === year
+        );
+      });
+
+      const incomeTotal = incomesForMonth.reduce(
+        (acc, income) => acc + Number(income.value),
+        0
+      );
+      const expenseTotal = expensesForMonth.reduce(
+        (acc, expense) => acc + Number(expense.value),
+        0
+      );
+
+      const netIncomeTotal = incomeTotal - expenseTotal;
+
+      months.push(monthYear);
+      incomeTotals.push(incomeTotal);
+      expenseTotals.push(expenseTotal);
+      netIncomeTotals.push(netIncomeTotal);
     });
 
     return { months, incomeTotals, expenseTotals, netIncomeTotals };
-    };
+  }, [incomes, expenses]);
 
   // Calculate account balance
   const calculateAccountBalance = () => {
@@ -142,12 +153,6 @@ function Dashboard() {
     const totalExpenses = expenses.reduce((acc, expense) => acc + Number(expense.value), 0);
     return totalIncome - totalExpenses;
   };
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-
-  const { months, incomeTotals, expenseTotals, netIncomeTotals } =
-    getMonthlyTotals();
 
   const [selectedMonth, selectedYear] = selected.split(" ") || ["", ""]; // Ensure correct fallback
 
