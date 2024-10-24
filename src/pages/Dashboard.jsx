@@ -4,6 +4,7 @@ import IncomeEditor from "../components/IncomeEditor";
 import ExpenseEditor from "../components/ExpenseEditor";
 import FinancialChart from "../components/FinancialChart";
 import useIncomesAndExpenses from "../hooks/useIncomesAndExpenses";
+import usePopupState from "../hooks/usePopupState";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -31,23 +32,18 @@ ChartJS.register(
 function Dashboard() {
   const [selected, setSelected] = useState("October 2024");
 
-  // Popup state
-  const [isIncomePopupOpen, setIncomePopupOpen] = useState(false);
-  const [isExpensePopupOpen, setExpensePopupOpen] = useState(false);
-  const [editIncome, setEditIncome] = useState(null);
-  const [editExpense, setEditExpense] = useState(null);
+  const {
+    isIncomePopupOpen,
+    isExpensePopupOpen,
+    openIncomeEditor,
+    openExpenseEditor,
+    setIncomePopupOpen,
+    setExpensePopupOpen,
+    editIncome,
+    editExpense,
+  } = usePopupState();
 
   const { incomes, expenses } = useIncomesAndExpenses(isIncomePopupOpen, isExpensePopupOpen);
-
-  const openIncomeEditor = (income = null) => {
-    setEditIncome(income);
-    setIncomePopupOpen(true);
-  };
-
-  const openExpenseEditor = (expense = null) => {
-    setEditExpense(expense);
-    setExpensePopupOpen(true);
-  };
 
   const { months, incomeTotals, expenseTotals, netIncomeTotals } = useMemo(() => {
     const incomeTotals = [];
