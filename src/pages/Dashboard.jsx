@@ -134,6 +134,13 @@ function Dashboard() {
     });
 
     return { months, incomeTotals, expenseTotals, netIncomeTotals };
+    };
+
+  // Calculate account balance
+  const calculateAccountBalance = () => {
+    const totalIncome = incomes.reduce((acc, income) => acc + Number(income.value), 0);
+    const totalExpenses = expenses.reduce((acc, expense) => acc + Number(expense.value), 0);
+    return totalIncome - totalExpenses;
   };
 
   if (loading) return <div>Loading...</div>;
@@ -161,12 +168,23 @@ function Dashboard() {
     return expenseMonth === selectedMonth && expenseYear === selectedYear;
   });
 
+  // Account balance
+  const accountBalance = calculateAccountBalance();
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <ResponsiveAppBar />
 
       <div className="container mx-auto">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">Dashboard</h2>
+
+        {/* Display account balance */}
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold text-gray-800">Account Balance</h3>
+            <p className={`text-2xl font-bold ${accountBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+              ${accountBalance.toFixed(2)}
+            </p>
+        </div>
 
         <div className="flex flex-col md:flex-row items-center mb-6">
           <label
