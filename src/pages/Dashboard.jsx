@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import IncomeEditor from "../components/IncomeEditor";
 import ExpenseEditor from "../components/ExpenseEditor";
 import FinancialChart from "../components/FinancialChart";
-import GetMonthlyData from "../hooks/GetMonthlyData";
+import useIncomesAndExpenses from "../hooks/useIncomesAndExpenses";
+import usePopupState from "../hooks/usePopupState";
+import useFinancialData from "../hooks/useFinancialData";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,8 +17,6 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
-import { db, auth } from "../firebase/firebaseconfig";
-import { collection, query, where, getDocs } from "firebase/firestore";
 
 // Register chart components
 ChartJS.register(
@@ -31,110 +31,23 @@ ChartJS.register(
 );
 
 function Dashboard() {
-  const { monthlyDataByYear, loading, error } = GetMonthlyData();
   const [selected, setSelected] = useState("October 2024");
 
-  // Popup state
-  const [isIncomePopupOpen, setIncomePopupOpen] = useState(false);
-  const [isExpensePopupOpen, setExpensePopupOpen] = useState(false);
-  const [editIncome, setEditIncome] = useState(null);
-  const [editExpense, setEditExpense] = useState(null);
-  const [incomes, setIncomes] = useState([]);
-  const [expenses, setExpenses] = useState([]);
+  const {
+    isIncomePopupOpen,
+    isExpensePopupOpen,
+    openIncomeEditor,
+    openExpenseEditor,
+    setIncomePopupOpen,
+    setExpensePopupOpen,
+    editIncome,
+    editExpense,
+  } = usePopupState();
 
-  // Fetch user-specific incomes and expenses
-  useEffect(() => {
-    const fetchIncomesAndExpenses = async () => {
-      try {
-        const userId = auth.currentUser?.uid;
-        if (!userId) return;
+  const { incomes, expenses } = useIncomesAndExpenses(isIncomePopupOpen, isExpensePopupOpen);
 
-        // Fetch incomes for the current user
-        const incomeQuery = query(
-          collection(db, "incomes"),
-          where("userId", "==", userId)
-        );
-        const incomeSnapshot = await getDocs(incomeQuery);
-        const fetchedIncomes = incomeSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setIncomes(fetchedIncomes);
-
-        // Fetch expenses for the current user
-        const expenseQuery = query(
-          collection(db, "expenses"),
-          where("userId", "==", userId)
-        );
-        const expenseSnapshot = await getDocs(expenseQuery);
-        const fetchedExpenses = expenseSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setExpenses(fetchedExpenses);
-      } catch (error) {
-        console.error("Error fetching incomes and expenses: ", error);
-      }
-    };
-
-    fetchIncomesAndExpenses();
-  }, [isIncomePopupOpen, isExpensePopupOpen]); // Re-fetch on popup open/close to reflect changes
-
-  const openIncomeEditor = (income = null) => {
-    setEditIncome(income);
-    setIncomePopupOpen(true);
-  };
-
-  const openExpenseEditor = (expense = null) => {
-    setEditExpense(expense);
-    setExpensePopupOpen(true);
-  };
-
-  const getMonthlyTotals = () => {
-    if (!monthlyDataByYear)
-      return {
-        months: [],
-        incomeTotals: [],
-        expenseTotals: [],
-        netIncomeTotals: [],
-      };
-
-    const years = Object.keys(monthlyDataByYear); // Get all years
-    const incomeTotals = [];
-    const expenseTotals = [];
-    const netIncomeTotals = [];
-    const months = [];
-
-    years.forEach((year) => {
-      const monthsInYear = Object.keys(monthlyDataByYear[year]); // Get all months for the current year
-
-      monthsInYear.forEach((month) => {
-        // Push the year and month combination to the months array
-        months.push(`${month} ${year}`);
-
-        // Calculate income total for the current month
-        const incomeTotal =
-          monthlyDataByYear[year][month]?.income.reduce(
-            (acc, item) => acc + Number(item.value),
-            0
-          ) || 0;
-        incomeTotals.push(incomeTotal);
-
-        // Calculate expense total for the current month
-        const expenseTotal =
-          monthlyDataByYear[year][month]?.expenses.reduce(
-            (acc, item) => acc + Number(item.value),
-            0
-          ) || 0;
-        expenseTotals.push(expenseTotal);
-
-        // Calculate net income (income - expenses)
-        netIncomeTotals.push(incomeTotal - expenseTotal);
-      });
-    });
-
-    return { months, incomeTotals, expenseTotals, netIncomeTotals };
-    };
+  // Use the custom hook for memoized financial data
+  const { months, incomeTotals, expenseTotals, netIncomeTotals } = useFinancialData(incomes, expenses);
 
   // Calculate account balance
   const calculateAccountBalance = () => {
@@ -142,12 +55,6 @@ function Dashboard() {
     const totalExpenses = expenses.reduce((acc, expense) => acc + Number(expense.value), 0);
     return totalIncome - totalExpenses;
   };
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-
-  const { months, incomeTotals, expenseTotals, netIncomeTotals } =
-    getMonthlyTotals();
 
   const [selectedMonth, selectedYear] = selected.split(" ") || ["", ""]; // Ensure correct fallback
 
