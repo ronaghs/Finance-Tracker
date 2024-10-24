@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import IncomeEditor from "../components/IncomeEditor";
 import ExpenseEditor from "../components/ExpenseEditor";
 import FinancialChart from "../components/FinancialChart";
 import useIncomesAndExpenses from "../hooks/useIncomesAndExpenses";
 import usePopupState from "../hooks/usePopupState";
+import useFinancialData from "../hooks/useFinancialData";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -45,63 +46,8 @@ function Dashboard() {
 
   const { incomes, expenses } = useIncomesAndExpenses(isIncomePopupOpen, isExpensePopupOpen);
 
-  const { months, incomeTotals, expenseTotals, netIncomeTotals } = useMemo(() => {
-    const incomeTotals = [];
-    const expenseTotals = [];
-    const netIncomeTotals = [];
-    const months = [];
-
-    const allDates = [...incomes, ...expenses].map((item) => {
-      const date = new Date(item.date);
-      const month = date.toLocaleString("default", { month: "long" });
-      const year = date.getFullYear().toString();
-      return `${month} ${year}`;
-    });
-
-    const uniqueMonths = [...new Set(allDates)].sort((a, b) => {
-      const [monthA, yearA] = a.split(" ");
-      const [monthB, yearB] = b.split(" ");
-      return new Date(`${monthA} 1, ${yearA}`) - new Date(`${monthB} 1, ${yearB}`);
-    });
-
-    uniqueMonths.forEach((monthYear) => {
-      const [month, year] = monthYear.split(" ");
-
-      const incomesForMonth = incomes.filter((income) => {
-        const incomeDate = new Date(income.date);
-        return (
-          incomeDate.toLocaleString("default", { month: "long" }) === month &&
-          incomeDate.getFullYear().toString() === year
-        );
-      });
-
-      const expensesForMonth = expenses.filter((expense) => {
-        const expenseDate = new Date(expense.date);
-        return (
-          expenseDate.toLocaleString("default", { month: "long" }) === month &&
-          expenseDate.getFullYear().toString() === year
-        );
-      });
-
-      const incomeTotal = incomesForMonth.reduce(
-        (acc, income) => acc + Number(income.value),
-        0
-      );
-      const expenseTotal = expensesForMonth.reduce(
-        (acc, expense) => acc + Number(expense.value),
-        0
-      );
-
-      const netIncomeTotal = incomeTotal - expenseTotal;
-
-      months.push(monthYear);
-      incomeTotals.push(incomeTotal);
-      expenseTotals.push(expenseTotal);
-      netIncomeTotals.push(netIncomeTotal);
-    });
-
-    return { months, incomeTotals, expenseTotals, netIncomeTotals };
-  }, [incomes, expenses]);
+  // Use the custom hook for memoized financial data
+  const { months, incomeTotals, expenseTotals, netIncomeTotals } = useFinancialData(incomes, expenses);
 
   // Calculate account balance
   const calculateAccountBalance = () => {
