@@ -211,7 +211,7 @@ function Dashboard() {
                   </h4>
                   <div className="flex space-x-3">
                     <FaEdit
-                      onClick={() => handleEditBudget(budget)}
+                      //   TODO: Add edit logic here
                       className="text-blue-600 cursor-pointer hover:text-blue-800"
                       title="Edit Budget"
                     />
