@@ -7,6 +7,7 @@ import BudgetCreator from "../components/BudgetCreator";
 import useIncomesAndExpenses from "../hooks/useIncomesAndExpenses";
 import usePopupState from "../hooks/usePopupState";
 import useFinancialData from "../hooks/useFinancialData";
+import useBudgets from "../hooks/useBudgets"; // Import the useBudgets hook
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -33,24 +34,10 @@ ChartJS.register(
 
 function Dashboard() {
   const [selected, setSelected] = useState("October 2024");
-
   const [isBudgetPopupOpen, setBudgetPopupOpen] = useState(false);
-
-  const {
-    isIncomePopupOpen,
-    isExpensePopupOpen,
-    openIncomeEditor,
-    openExpenseEditor,
-    setIncomePopupOpen,
-    setExpensePopupOpen,
-    editIncome,
-    editExpense,
-  } = usePopupState();
-
+  const { isIncomePopupOpen, isExpensePopupOpen, openIncomeEditor, openExpenseEditor, setIncomePopupOpen, setExpensePopupOpen, editIncome, editExpense } = usePopupState();
   const { incomes, expenses } = useIncomesAndExpenses(isIncomePopupOpen, isExpensePopupOpen);
-
-  // Use the custom hook for memoized financial data
-  const { months, incomeTotals, expenseTotals, netIncomeTotals } = useFinancialData(incomes, expenses);
+  const budgets = useBudgets(); // Get budgets data
 
   // Calculate account balance
   const calculateAccountBalance = () => {
@@ -59,9 +46,10 @@ function Dashboard() {
     return totalIncome - totalExpenses;
   };
 
-  const [selectedMonth, selectedYear] = selected.split(" ") || ["", ""]; // Ensure correct fallback
+  const { months, incomeTotals, expenseTotals, netIncomeTotals } = useFinancialData(incomes, expenses);
+  const accountBalance = calculateAccountBalance();
+  const [selectedMonth, selectedYear] = selected.split(" ") || ["", ""];
 
-  // **Filter incomes and expenses based on selected month and year**
   const filteredIncomes = incomes.filter((income) => {
     const incomeDate = new Date(income.date);
     const incomeMonth = incomeDate.toLocaleString("default", { month: "long" });
@@ -71,15 +59,56 @@ function Dashboard() {
 
   const filteredExpenses = expenses.filter((expense) => {
     const expenseDate = new Date(expense.date);
-    const expenseMonth = expenseDate.toLocaleString("default", {
-      month: "long",
-    });
+    const expenseMonth = expenseDate.toLocaleString("default", { month: "long" });
     const expenseYear = expenseDate.getFullYear().toString();
     return expenseMonth === selectedMonth && expenseYear === selectedYear;
   });
 
-  // Account balance
-  const accountBalance = calculateAccountBalance();
+  // Calculate current spending for each budget category
+  const budgetData = budgets.map((budget) => {
+    // Parse budget start and end dates
+    const budgetStartDate = new Date(budget.startDate);
+    const budgetEndDate = new Date(budget.endDate);
+
+    // Calculate current expenses if the budget type is "expense"
+    const currentExpenses = budget.type === "expense"
+      ? filteredExpenses
+        .filter((expense) => 
+          expense.category === budget.category &&
+          new Date(expense.date) >= budgetStartDate &&
+          new Date(expense.date) <= budgetEndDate
+        )
+        .reduce((acc, expense) => acc + Number(expense.value), 0)
+    : null; // Use null if type is not "expense"
+
+    // Calculate current incomes if the budget type is "income"
+    const currentIncomes = budget.type === "income"
+      ? filteredIncomes
+        .filter((income) => 
+          income.category === budget.category &&
+          new Date(income.date) >= budgetStartDate &&
+          new Date(income.date) <= budgetEndDate
+        )
+        .reduce((acc, income) => acc + Number(income.value), 0)
+    : null; // Use null if type is not "income"
+
+    // Create a budget object with only the relevant fields
+    const budgetEntry = {
+      category: budget.category,
+      budgetValue: budget.value,
+    };
+
+    // Add currentSpending or currentIncome to the budget entry if they are not null
+    if (currentExpenses !== null) {
+      budgetEntry.currentSpending = currentExpenses;
+    }
+
+    if (currentIncomes !== null) {
+      budgetEntry.currentIncome = currentIncomes;
+    }
+
+    return budgetEntry;
+  });
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
@@ -88,33 +117,41 @@ function Dashboard() {
       <div className="container mx-auto">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">Dashboard</h2>
 
-        {/* Display account balance */}
         <div className="mb-6">
           <h3 className="text-xl font-semibold text-gray-800">Account Balance</h3>
-            <p className={`text-2xl font-bold ${accountBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
-              ${accountBalance.toFixed(2)}
-            </p>
+          <p className={`text-2xl font-bold ${accountBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+            ${accountBalance.toFixed(2)}
+          </p>
         </div>
 
         <div className="flex flex-col md:flex-row items-center mb-6">
-          <label
-            htmlFor="month-selector"
-            className="mb-2 md:mb-0 mr-4 text-lg font-medium text-gray-700"
-          >
-            Select Month:
-          </label>
-          <select
-            id="month-selector"
-            value={selected}
-            onChange={(e) => setSelected(e.target.value)}
-            className="border border-gray-300 rounded-lg p-2 text-lg w-full md:w-auto"
-          >
+          <label htmlFor="month-selector" className="mb-2 md:mb-0 mr-4 text-lg font-medium text-gray-700">Select Month:</label>
+          <select id="month-selector" value={selected} onChange={(e) => setSelected(e.target.value)} className="border border-gray-300 rounded-lg p-2 text-lg w-full md:w-auto">
             {months.map((month) => (
-              <option key={month} value={month}>
-                {month}
-              </option>
+              <option key={month} value={month}>{month}</option>
             ))}
           </select>
+        </div>
+
+        {/* Display budget information */}
+        <div className="mt-8">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4">Budgets</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {budgetData.map((budget) => (
+            <div key={budget.category} className="bg-white p-4 shadow rounded-lg">
+              <h4 className="text-lg font-semibold text-blue-600">{budget.category}</h4>
+              <p className="text-sm text-gray-600">Budget: ${budget.budgetValue}</p>
+              {/* Conditionally render current spending if it exists */}
+              {budget.currentSpending !== undefined && (
+                <p className="text-sm text-gray-600">Current Spending: ${budget.currentSpending.toFixed(2)}</p>
+              )}
+              {/* Conditionally render current income if it exists */}
+              {budget.currentIncome !== undefined && (
+                <p className="text-sm text-gray-600">Current Income: ${budget.currentIncome.toFixed(2)}</p>
+              )}
+            </div>
+          ))}
+        </div>
         </div>
 
         <FinancialChart
@@ -123,8 +160,8 @@ function Dashboard() {
           expenseTotals={expenseTotals}
           netIncomeTotals={netIncomeTotals}
           selectedMonth={selectedMonth}
-          selectedIncome={filteredIncomes} // Use filtered incomes
-          selectedExpenses={filteredExpenses} // Use filtered expenses
+          selectedIncome={filteredIncomes} 
+          selectedExpenses={filteredExpenses}
         />
 
         <div className="container mx-auto mt-8">
