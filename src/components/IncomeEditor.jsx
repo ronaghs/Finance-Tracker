@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import { incomeCategories } from "../constants/categories";
 import { db, auth } from "../firebase/firebaseconfig";
 import {
   collection,
@@ -10,11 +11,16 @@ import {
 } from "firebase/firestore";
 
 function IncomeEditor({ income, onClose }) {
+  const predefinedCategories = incomeCategories;
+
+  const [categories, setCategories] = useState(predefinedCategories);
   const [incomeData, setIncomeData] = useState({
     name: "",
     value: 0,
     date: "",
+    category: predefinedCategories[0],
   });
+
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -23,14 +29,22 @@ function IncomeEditor({ income, onClose }) {
     }
   }, [income]);
 
+  const handleCategoryChange = (event) => {
+    const selectedCategory = event.target.value;
+    setIncomeData((prev) => ({
+      ...prev,
+      category: selectedCategory,
+    }));
+  };
+
   const handleChange = (event) => {
     const { name, value } = event.target;
-    if (name === "value") {
-      setIncomeData((prev) => ({ ...prev, [name]: Number(value) })); // Convert to number
-    } else {
-      setIncomeData((prev) => ({ ...prev, [name]: value }));
-    }
+    setIncomeData((prev) => ({
+      ...prev,
+      [name]: name === "value" ? Number(value) : value,
+    }));
   };
+
 
   const saveIncomeToDB = async () => {
     try {
@@ -39,13 +53,9 @@ function IncomeEditor({ income, onClose }) {
 
       if (income) {
         const incomeDoc = doc(db, "incomes", income.id);
-        const { ...dataToUpdate } = incomeData;
-        await updateDoc(incomeDoc, { ...dataToUpdate, userId });
+        await updateDoc(incomeDoc, { ...incomeData, userId });
       } else {
-        await addDoc(collection(db, "incomes"), {
-          ...incomeData,
-          userId, // Add the current user's ID
-        });
+        await addDoc(collection(db, "incomes"), { ...incomeData, userId });
       }
       setMessage("Income saved successfully!");
       onClose();
@@ -70,54 +80,99 @@ function IncomeEditor({ income, onClose }) {
   };
 
   return (
-    <div className="p-4">
-      <h3 className="text-xl">{income ? "Edit Income" : "Add Income"}</h3>
-      <input
-        type="text"
-        name="name"
-        placeholder="Income Source"
-        value={incomeData.name}
-        onChange={handleChange}
-        className="border p-1 mr-2"
-      />
-      <input
-        type="number"
-        name="value"
-        placeholder="Amount"
-        value={incomeData.value}
-        onChange={handleChange}
-        className="border p-1 mr-2"
-      />
-      <input
-        type="date"
-        name="date"
-        value={incomeData.date}
-        onChange={handleChange}
-        className="border p-1 mr-2"
-      />
-      <button onClick={saveIncomeToDB} className="bg-green-500 text-white p-2">
-        Save
-      </button>
-      {income && (
-        <button
-          onClick={deleteIncome}
-          className="bg-red-500 text-white p-2 ml-2"
+    <div className="p-6 max-w-md mx-auto bg-white rounded-lg shadow-md">
+      <h3 className="text-2xl font-semibold mb-4">
+        {income ? "Edit Income" : "Add Income"}
+      </h3>
+
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">
+          Income Source:
+        </label>
+        <input
+          type="text"
+          name="name"
+          placeholder="Enter income source"
+          value={incomeData.name}
+          onChange={handleChange}
+          className="border border-gray-300 rounded w-full p-2"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">
+          Amount:
+        </label>
+        <input
+          type="number"
+          name="value"
+          placeholder="Enter amount"
+          value={incomeData.value}
+          onChange={handleChange}
+          className="border border-gray-300 rounded w-full p-2"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">
+          Date:
+        </label>
+        <input
+          type="date"
+          name="date"
+          value={incomeData.date}
+          onChange={handleChange}
+          className="border border-gray-300 rounded w-full p-2"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">
+          Category:
+        </label>
+        <select
+          name="category"
+          value={incomeData.category}
+          onChange={handleCategoryChange}
+          className="border border-gray-300 rounded p-2 w-full"
         >
-          Delete
+          {categories.map((category, index) => (
+            <option key={index} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex justify-between">
+        <button
+          onClick={saveIncomeToDB}
+          className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
+        >
+          Save
         </button>
-      )}
-      {message && <p>{message}</p>}
+        {income && (
+          <button
+            onClick={deleteIncome}
+            className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
+          >
+            Delete
+          </button>
+        )}
+      </div>
+
+      {message && <p className="mt-4 text-center text-gray-700">{message}</p>}
     </div>
   );
 }
 
-// PropTypes for the component
 IncomeEditor.propTypes = {
   income: PropTypes.shape({
     id: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     value: PropTypes.number.isRequired,
     date: PropTypes.string.isRequired,
+    category: PropTypes.string,
   }),
   onClose: PropTypes.func.isRequired,
 };
