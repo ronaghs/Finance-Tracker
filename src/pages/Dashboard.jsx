@@ -3,6 +3,7 @@ import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import IncomeEditor from "../components/IncomeEditor";
 import ExpenseEditor from "../components/ExpenseEditor";
 import FinancialChart from "../components/FinancialChart";
+import BudgetCreator from "../components/BudgetCreator";
 import useIncomesAndExpenses from "../hooks/useIncomesAndExpenses";
 import usePopupState from "../hooks/usePopupState";
 import useFinancialData from "../hooks/useFinancialData";
@@ -32,6 +33,8 @@ ChartJS.register(
 
 function Dashboard() {
   const [selected, setSelected] = useState("October 2024");
+
+  const [isBudgetPopupOpen, setBudgetPopupOpen] = useState(false);
 
   const {
     isIncomePopupOpen,
@@ -138,6 +141,13 @@ function Dashboard() {
             >
               <i className="fas fa-plus mr-2"></i> Add Expense
             </button>
+
+            <button
+              onClick={() => setBudgetPopupOpen(true)}
+              className="btn btn-warning bg-yellow-500 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg shadow-lg flex items-center justify-center"
+            >
+              <i className="fas fa-plus mr-2"></i> Create Budget
+            </button>
           </div>
 
           <div className="mt-6">
@@ -223,6 +233,19 @@ function Dashboard() {
                   expense={editExpense}
                   onClose={() => setExpensePopupOpen(false)}
                 />
+              </div>
+            </div>
+          )}
+          {isBudgetPopupOpen && (
+            <div className="popup fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div className="popup-content bg-white p-6 rounded-lg shadow-lg relative w-full max-w-md">
+                <button
+                  onClick={() => setBudgetPopupOpen(false)}
+                  className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                >
+                  &times;
+                </button>
+                <BudgetCreator onClose={() => setBudgetPopupOpen(false)} />
               </div>
             </div>
           )}
