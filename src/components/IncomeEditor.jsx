@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import { incomeCategories } from "../constants/categories";
 import { db, auth } from "../firebase/firebaseconfig";
 import {
   collection,
@@ -10,15 +11,7 @@ import {
 } from "firebase/firestore";
 
 function IncomeEditor({ income, onClose }) {
-  const predefinedCategories = [
-    "Salary",
-    "Freelance",
-    "Investments",
-    "Gifts",
-    "Rental Income",
-    "Business",
-    "Others",
-  ];
+  const predefinedCategories = incomeCategories;
 
   const [categories, setCategories] = useState(predefinedCategories);
   const [incomeData, setIncomeData] = useState({
@@ -46,8 +39,12 @@ function IncomeEditor({ income, onClose }) {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setIncomeData((prev) => ({ ...prev, [name]: value }));
+    setIncomeData((prev) => ({
+      ...prev,
+      [name]: name === "value" ? Number(value) : value,
+    }));
   };
+
 
   const saveIncomeToDB = async () => {
     try {

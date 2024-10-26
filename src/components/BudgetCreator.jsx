@@ -2,6 +2,7 @@ import { useState } from "react";
 import PropTypes from "prop-types";
 import { db, auth } from "../firebase/firebaseconfig";
 import { collection, addDoc } from "firebase/firestore";
+import { incomeCategories, expenseCategories } from "../constants/categories";
 
 function BudgetCreator({ onClose }) {
   const [budgetData, setBudgetData] = useState({
@@ -38,9 +39,14 @@ function BudgetCreator({ onClose }) {
     }
   };
 
+  // Get categories based on the selected type
+  const categories = budgetData.type === "income" ? incomeCategories : expenseCategories;
+
   return (
     <div className="p-4">
       <h3 className="text-xl">{budgetData.type === "income" ? "Income Budget" : "Expense Budget"}</h3>
+
+      {/* Select Type */}
       <label className="block mt-2">Type:</label>
       <select
         name="type"
@@ -52,16 +58,23 @@ function BudgetCreator({ onClose }) {
         <option value="expense">Expense</option>
       </select>
       
+      {/* Select Category */}
       <label className="block mt-2">Category:</label>
-      <input
-        type="text"
+      <select
         name="category"
-        placeholder="Category"
         value={budgetData.category}
         onChange={handleChange}
         className="border p-1"
-      />
+      >
+        <option value="">Select Category</option>
+        {categories.map((cat) => (
+          <option key={cat} value={cat}>
+            {cat}
+          </option>
+        ))}
+      </select>
 
+      {/* Date Range */}
       <label className="block mt-2">Start Date:</label>
       <input
         type="date"
@@ -80,6 +93,7 @@ function BudgetCreator({ onClose }) {
         className="border p-1"
       />
 
+      {/* Budget Value */}
       <label className="block mt-2">Budget Value:</label>
       <input
         type="number"
@@ -90,6 +104,7 @@ function BudgetCreator({ onClose }) {
         className="border p-1"
       />
 
+      {/* Save Button */}
       <button onClick={saveBudgetToDB} className="bg-green-500 text-white p-2 mt-4">
         Save Budget
       </button>

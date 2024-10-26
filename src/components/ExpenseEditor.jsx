@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
+import { expenseCategories } from "../constants/categories";
 import { db, auth } from "../firebase/firebaseconfig";
 import {
   collection,
@@ -10,17 +11,7 @@ import {
 } from "firebase/firestore";
 
 function ExpenseEditor({ expense, onClose }) {
-  const predefinedCategories = [
-    "House",
-    "Transport",
-    "Food",
-    "Entertainment",
-    "Utilities",
-    "Health",
-    "Bills",
-    "Personal",
-    "Miscellaneous",
-  ];
+    const predefinedCategories = expenseCategories;
 
   const [categories, setCategories] = useState(predefinedCategories);
 
@@ -49,7 +40,10 @@ function ExpenseEditor({ expense, onClose }) {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setExpenseData((prev) => ({ ...prev, [name]: value }));
+    setExpenseData((prev) => ({
+      ...prev,
+      [name]: name === "value" ? Number(value) : value,
+    }));
   };
 
   const saveExpenseToDB = async () => {
