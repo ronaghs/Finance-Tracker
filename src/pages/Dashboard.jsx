@@ -141,7 +141,6 @@ function Dashboard() {
             >
               <i className="fas fa-plus mr-2"></i> Add Expense
             </button>
-
             <button
               onClick={() => setBudgetPopupOpen(true)}
               className="btn btn-warning bg-yellow-500 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg shadow-lg flex items-center justify-center"
