@@ -10,9 +10,10 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 
-function IncomeEditor({ income, onClose }) {
+function IncomeEditor({ income, onClose, applyIncomeToGoals }) {
   const predefinedCategories = incomeCategories;
 
+  // Disregard error. Left here for future category implementation
   const [categories, setCategories] = useState(predefinedCategories);
   const [incomeData, setIncomeData] = useState({
     name: "",
@@ -20,7 +21,6 @@ function IncomeEditor({ income, onClose }) {
     date: "",
     category: predefinedCategories[0],
   });
-
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -45,11 +45,12 @@ function IncomeEditor({ income, onClose }) {
     }));
   };
 
-
   const saveIncomeToDB = async () => {
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) return;
+
+      const savedIncomeAmount = incomeData.value;
 
       if (income) {
         const incomeDoc = doc(db, "incomes", income.id);
@@ -58,6 +59,12 @@ function IncomeEditor({ income, onClose }) {
         await addDoc(collection(db, "incomes"), { ...incomeData, userId });
       }
       setMessage("Income saved successfully!");
+
+      // Call the applyIncomeToGoals function after saving income
+      if (applyIncomeToGoals) {
+        applyIncomeToGoals(savedIncomeAmount);
+      }
+
       onClose();
     } catch (error) {
       console.error("Error saving income: ", error);
@@ -74,7 +81,7 @@ function IncomeEditor({ income, onClose }) {
         onClose();
       }
     } catch (error) {
-      console.error("Error deleting income: ", error);
+      console.error("Error deleting income:", error);
       setMessage("Error deleting income.");
     }
   };
@@ -175,6 +182,7 @@ IncomeEditor.propTypes = {
     category: PropTypes.string,
   }),
   onClose: PropTypes.func.isRequired,
+  applyIncomeToGoals: PropTypes.func, // Prop to trigger income application to goals
 };
 
 export default IncomeEditor;
