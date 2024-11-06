@@ -27,6 +27,7 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
+import SavingsNotification from "../components/SavingsNotification";
 
 ChartJS.register(
   CategoryScale,
@@ -45,6 +46,7 @@ function Dashboard() {
   const [budgetToEdit, setBudgetToEdit] = useState(null);
   const [budgets, setBudgets] = useState([]);
   const [goals, setGoals] = useState([]); // State to store real-time goals
+  const [notification, setNotification] = useState("");
 
   const {
     isIncomePopupOpen,
@@ -82,17 +84,23 @@ function Dashboard() {
     return () => unsubscribe();
   }, []);
 
-  // Function to apply income to goals
+  // Function to apply income to goals and generate notification
   const applyIncomeToGoals = async (incomeAmount) => {
-    if (!goals || goals.length === 0) return;
+    if (!goals || goals.length === 0 || incomeAmount <= 0) return;
+
+    let notificationMessage = "Savings Distributed:\n"; // Start the notification message
 
     const updatedGoals = goals.map((goal) => {
       const contribution = (goal.contributionPercentage / 100) * incomeAmount;
       const newSavedAmount = goal.saved + contribution;
+
+      // Append each goal's contribution to the notification message
+      notificationMessage += `${goal.category}: $${contribution.toFixed(2)}\n`;
+
       return { ...goal, saved: newSavedAmount };
     });
 
-    setGoals(updatedGoals);
+    setGoals(updatedGoals); // Update the local state
 
     // Update Firestore for each goal with the new saved amount
     updatedGoals.forEach(async (goal) => {
@@ -103,6 +111,8 @@ function Dashboard() {
         console.error(`Error updating goal ${goal.id}:`, error);
       }
     });
+
+    setNotification(notificationMessage); // Set the notification message
   };
 
   // Real-time budget update
@@ -210,6 +220,10 @@ function Dashboard() {
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <ResponsiveAppBar />
+      <SavingsNotification
+        notification={notification}
+        setNotification={setNotification}
+      />
       <div className="container mx-auto">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">Dashboard</h2>
 

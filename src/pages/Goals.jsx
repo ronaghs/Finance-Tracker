@@ -40,7 +40,7 @@ const FinancialGoals = () => {
     endDate: "",
     saved: 0,
     contribution: 0,
-    contributionPercentage: 0, // Added field for automatic contribution percentage
+    contributionPercentage: 0, 
   });
   const [open, setOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
@@ -76,7 +76,7 @@ const FinancialGoals = () => {
       endDate: "",
       saved: 0,
       contribution: 0,
-      contributionPercentage: 0, 
+      contributionPercentage: 0,
     });
     setEditingGoal(null);
     setDateError(false);
