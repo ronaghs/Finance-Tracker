@@ -39,6 +39,9 @@ function ExpenseEditor({ expense, onClose }) {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    if (name === "value" && value < 0) {
+      return; // Do nothing if value is negative
+    }
     setExpenseData((prev) => ({
       ...prev,
       [name]: name === "value" ? Number(value) : value,
@@ -114,7 +117,9 @@ function ExpenseEditor({ expense, onClose }) {
           type="number"
           name="value"
           placeholder="Enter amount"
-          value={expenseData.value}
+          value={expenseData.value === 0 ? "" : expenseData.value} // Display empty if value is 0
+          onFocus={(e) => e.target.value === "0" && setExpenseData({ ...expenseData, value: "" })} // Clear if 0 on focus
+          onBlur={(e) => !e.target.value && setExpenseData({ ...expenseData, value: 0 })} // Set back to 0 if empty on blur
           onChange={handleChange}
           className="border border-gray-300 rounded w-full p-2"
         />
