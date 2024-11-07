@@ -20,6 +20,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import Confetti from "react-confetti";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar"; // Import circular progress bar
+import "react-circular-progressbar/dist/styles.css"; // Import default styles
 import { db, auth } from "../firebase/firebaseconfig";
 import {
   collection,
@@ -40,7 +42,7 @@ const FinancialGoals = () => {
     endDate: "",
     saved: 0,
     contribution: 0,
-    contributionPercentage: 0, 
+    contributionPercentage: 0,
   });
   const [open, setOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
@@ -166,11 +168,26 @@ const FinancialGoals = () => {
     return daysRemaining >= 0 ? daysRemaining : 0;
   };
 
-  const getProgressBarColor = (progress) => {
-    if (progress >= 75) return "#4caf50";
-    if (progress >= 30) return "#ffeb3b";
-    return "#f44336";
+  const calculatePercentageTimeLeft = (endDate) => {
+    const today = new Date();
+    const startDate = new Date(); // Assume today as the start for simplicity
+    const goalDate = new Date(endDate);
+    const totalTime = goalDate - startDate;
+    const remainingTime = goalDate - today;
+    const percentageTimeLeft = Math.max((remainingTime / totalTime) * 100, 0);
+    return percentageTimeLeft;
   };
+
+  // TODO: Used to test circular progress bar. Remove when appropriate.
+  // const calculatePercentageTimeLeft = () => {
+  //   // Hardcoded specific percentage for testing
+  //   return 10; // Replace this with other percentages to test
+  // };
+
+  // const calculateDaysRemaining = () => {
+  //   // Hardcoded  number of days remaining for testing
+  //   return 5; // Replace with different values to test different states
+  // };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -197,6 +214,7 @@ const FinancialGoals = () => {
           const progress = (goal.saved / goal.amount) * 100;
           const cappedProgress = Math.min(progress, 100);
           const daysRemaining = calculateDaysRemaining(goal.endDate);
+          const percentageTimeLeft = calculatePercentageTimeLeft(goal.endDate);
 
           return (
             <Card
@@ -210,45 +228,41 @@ const FinancialGoals = () => {
                 >
                   {goal.category}
                 </Typography>
-                <div className="flex items-center mb-1">
-                  <Typography className="text-gray-800 font-bold flex items-center mr-2">
-                    🎯 Goal:{" "}
-                    <span className="text-blue-600 ml-1">${goal.amount}</span>
-                  </Typography>
-                  <span className="mx-2 text-gray-400">|</span>
-                  <Typography className="text-gray-800 font-bold flex items-center">
-                    💰 Saved:{" "}
-                    <span className="text-green-600 ml-1">${goal.saved}</span>
-                  </Typography>
-                </div>
-                <Tooltip title={`Goal Date: ${formatDate(goal.endDate)}`}>
-                  <Typography
-                    className={`${
-                      daysRemaining <= 3 ? "text-red-500" : "text-gray-800"
-                    } font-bold mb-2 flex items-center`}
+                <div className="flex items-center mb-2">
+                  <Tooltip
+                    title={`Goal End Date: ${formatDate(goal.endDate)}`}
+                    arrow
                   >
-                    ⏳{" "}
-                    {daysRemaining > 0
-                      ? `${daysRemaining} days remaining`
-                      : `Goal Ended`}
-                  </Typography>
-                </Tooltip>
+                    <div className="w-16 h-16 mr-4">
+                      <CircularProgressbar
+                        value={percentageTimeLeft}
+                        text={`${daysRemaining}d`}
+                        styles={buildStyles({
+                          textColor: daysRemaining <= 3 ? "#f44336" : "#000",
+                          pathColor: daysRemaining <= 3 ? "#f44336" : "#4caf50",
+                          trailColor: "#d6d6d6",
+                        })}
+                      />
+                    </div>
+                  </Tooltip>
+                  <div>
+                    <Typography className="text-gray-800 font-bold">
+                      🎯 Goal: ${goal.amount}
+                    </Typography>
+                    <Typography className="text-green-600 font-bold">
+                      💰 Saved: ${goal.saved}
+                    </Typography>
+                  </div>
+                </div>
                 <LinearProgress
                   variant="determinate"
                   value={cappedProgress}
                   className="my-2"
-                  sx={{
-                    backgroundColor: "#e0e0e0",
-                    "& .MuiLinearProgress-bar": {
-                      backgroundColor: getProgressBarColor(cappedProgress),
-                    },
-                  }}
                 />
                 <Typography variant="body2" className="text-sm">{`${Math.round(
                   progress
                 )}% of your goal reached`}</Typography>
               </CardContent>
-
               <CardActions>
                 <TextField
                   placeholder="0"
