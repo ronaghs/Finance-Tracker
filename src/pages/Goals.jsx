@@ -23,65 +23,51 @@ import Confetti from "react-confetti";
 import { db, auth } from "../firebase/firebaseconfig";
 import {
   collection,
-  getDocs,
   addDoc,
   updateDoc,
   doc,
   deleteDoc,
   query,
   where,
+  onSnapshot,
 } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth"; // Import auth state listener
 
 const FinancialGoals = () => {
-  const [goals, setGoals] = useState([]); // Stores all the user-specific goals
+  const [goals, setGoals] = useState([]);
   const [newGoal, setNewGoal] = useState({
     amount: "",
     category: "",
     endDate: "",
     saved: 0,
     contribution: 0,
+    contributionPercentage: 0, 
   });
-  const [open, setOpen] = useState(false); // Controls the goal dialog
-  const [editingGoal, setEditingGoal] = useState(null); // Track if a goal is being edited
-  const [showConfetti, setShowConfetti] = useState(false); // Trigger confetti when a goal is reached
-  const [dateError, setDateError] = useState(false); // Track if the date is valid
+  const [open, setOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [dateError, setDateError] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // Fetch goals from Firestore for the logged-in user
-        const fetchGoals = async () => {
-          try {
-            const q = query(
-              collection(db, "goals"),
-              where("userId", "==", user.uid)
-            );
-            const querySnapshot = await getDocs(q);
-            const fetchedGoals = querySnapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            }));
-            setGoals(fetchedGoals); // Set fetched goals to the state
-          } catch (error) {
-            console.error("Error fetching goals:", error);
-          }
-        };
-        fetchGoals();
-      } else {
-        console.error("No authenticated user found.");
-        setGoals([]); // Clear goals if no user is found
-      }
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    const goalsQuery = query(
+      collection(db, "goals"),
+      where("userId", "==", userId)
+    );
+    const unsubscribe = onSnapshot(goalsQuery, (querySnapshot) => {
+      const fetchedGoals = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setGoals(fetchedGoals);
     });
 
-    // Cleanup listener on unmount
     return () => unsubscribe();
   }, []);
 
-  // Open the Add/Edit Goal dialog
   const handleOpen = () => setOpen(true);
 
-  // Close the prompt and reset the newGoal state
   const handleClose = () => {
     setOpen(false);
     setNewGoal({
@@ -90,129 +76,102 @@ const FinancialGoals = () => {
       endDate: "",
       saved: 0,
       contribution: 0,
+      contributionPercentage: 0,
     });
     setEditingGoal(null);
-    setDateError(false); // Reset date error when closing the dialog
+    setDateError(false);
   };
 
-  // Validate if the selected date is in the past
   const handleDateChange = (e) => {
     const selectedDate = new Date(e.target.value);
     const today = new Date();
-
-    // Compare the selected date to today's date
     if (selectedDate < today) {
-      setDateError(true); // Invalid date, show error
+      setDateError(true);
     } else {
-      setDateError(false); // Valid date, hide error
+      setDateError(false);
       setNewGoal({ ...newGoal, endDate: e.target.value });
     }
   };
 
-  // Save or update a goal in Firestore
   const handleSave = async () => {
     if (dateError) {
-      alert("Please pick a valid date!"); // Prevent saving if date is invalid
+      alert("Please pick a valid date!");
       return;
     }
 
-    const userId = auth.currentUser?.uid; // Get the current user's ID
-    if (!userId) return; // Exit if user is not logged in
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
 
     if (editingGoal !== null) {
-      // Update an existing goal
       const goalDocRef = doc(db, "goals", editingGoal);
       await updateDoc(goalDocRef, { ...newGoal, userId });
-
-      // Update the state to reflect the edited goal
       const updatedGoals = goals.map((goal) =>
         goal.id === editingGoal ? { id: editingGoal, ...newGoal, userId } : goal
       );
-      setGoals(updatedGoals); // Update the state with the edited goal
+      setGoals(updatedGoals);
     } else {
-      // Add a new goal to Firestore
       const docRef = await addDoc(collection(db, "goals"), {
         ...newGoal,
         userId,
       });
-
-      // Add the new goal to the state
-      setGoals([...goals, { id: docRef.id, ...newGoal, userId }]); // Append new goal to the existing state
+      setGoals([...goals, { id: docRef.id, ...newGoal, userId }]);
     }
-
-    handleClose(); // Close the prompt
+    handleClose();
   };
 
-  // Edit goal handler
   const handleEdit = (index) => {
-    setEditingGoal(goals[index].id); // Track the goal being edited
-    setNewGoal(goals[index]); // Pre-fill the form with the selected goal data
-    setOpen(true); // Open the prompt
+    setEditingGoal(goals[index].id);
+    setNewGoal(goals[index]);
+    setOpen(true);
   };
 
-  // Delete goal handler (prompts for confirmation before removing the goal)
   const handleDelete = async (index) => {
-    const goal = goals[index]; // Get the goal to delete
-
-    // Confirmation dialog to ensure the user wants to delete the goal
+    const goal = goals[index];
     const confirmDelete = window.confirm(`Delete this goal?`);
-
     if (confirmDelete) {
-      // Proceed with deletion if user confirms
-      const goalId = goal.id; // Get the goal ID
-      await deleteDoc(doc(db, "goals", goalId)); // Delete the goal in Firestore
-      setGoals(goals.filter((_, i) => i !== index)); // Remove the goal from state
+      const goalId = goal.id;
+      await deleteDoc(doc(db, "goals", goalId));
+      setGoals(goals.filter((_, i) => i !== index));
     }
   };
 
-  // Handle the input change for contribution amount
   const handleContributionChange = (index, amount) => {
     const updatedGoals = goals.map((goal, i) =>
       i === index ? { ...goal, contribution: amount } : goal
     );
-    setGoals(updatedGoals); // Update contribution in the state
+    setGoals(updatedGoals);
   };
 
-  // Add the contribution to the saved amount and check if the goal is met
   const handleContribution = async (index) => {
-    const userId = auth.currentUser?.uid; // Get the current user's ID
+    const userId = auth.currentUser?.uid;
     if (!userId) return;
 
-    const goal = goals[index]; // Get the goal being updated
-    const newSaved = goal.saved + goal.contribution; // Calculate new saved value
-
-    // If the goal is met, show confetti and celebrate
+    const goal = goals[index];
+    const newSaved = goal.saved + goal.contribution;
     if (newSaved >= goal.amount) {
-      setShowConfetti(true); // Show confetti
-      setTimeout(() => setShowConfetti(false), 5000); // Hide confetti after 5 seconds
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 5000);
     }
-
-    // Update the goal's saved amount and reset the contribution
     const updatedGoal = { ...goal, saved: newSaved, contribution: 0 };
-    await updateDoc(doc(db, "goals", goal.id), updatedGoal); // Update Firestore
-
-    // Update the goal in state
+    await updateDoc(doc(db, "goals", goal.id), updatedGoal);
     const updatedGoals = goals.map((g, i) => (i === index ? updatedGoal : g));
     setGoals(updatedGoals);
   };
 
-  // Calculate the remaining days until the goal's end date
   const calculateDaysRemaining = (endDate) => {
     const today = new Date();
     const goalDate = new Date(endDate);
     const timeDifference = goalDate - today;
-    const daysRemaining = Math.ceil(timeDifference / (1000 * 60 * 60 * 24)); // Convert ms to days
-    return daysRemaining >= 0 ? daysRemaining : 0; // Return 0 if past due date
+    const daysRemaining = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+    return daysRemaining >= 0 ? daysRemaining : 0;
   };
 
-  // Dynamically set the progress bar color based on progress percentage
   const getProgressBarColor = (progress) => {
-    if (progress >= 75) return "#4caf50"; // Green for 75%+
-    if (progress >= 30) return "#ffeb3b"; // Yellow for 30%-75%
-    return "#f44336"; // Red for below 30%
+    if (progress >= 75) return "#4caf50";
+    if (progress >= 30) return "#ffeb3b";
+    return "#f44336";
   };
 
-  // Function to format the selected date into a readable format
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -236,7 +195,7 @@ const FinancialGoals = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {goals.map((goal, index) => {
           const progress = (goal.saved / goal.amount) * 100;
-          const cappedProgress = Math.min(progress, 100); // Cap progress at 100%
+          const cappedProgress = Math.min(progress, 100);
           const daysRemaining = calculateDaysRemaining(goal.endDate);
 
           return (
@@ -307,7 +266,6 @@ const FinancialGoals = () => {
                   }}
                   className="mr-2"
                 />
-
                 <Tooltip title="Add Contribution">
                   <IconButton
                     onClick={() => handleContribution(index)}
@@ -343,16 +301,15 @@ const FinancialGoals = () => {
           {editingGoal !== null ? "Edit Goal" : "Add Goal"}
         </DialogTitle>
         <DialogContent className="space-y-2">
-          {/* Fix for 0 persisting in amount field, preventing deletion to clear the input box. */}
           <TextField
             label="Amount"
             type="number"
             fullWidth
-            value={newGoal.amount === 0 ? "" : newGoal.amount} // Show empty string if 0
+            value={newGoal.amount === 0 ? "" : newGoal.amount}
             onChange={(e) =>
               setNewGoal({
                 ...newGoal,
-                amount: e.target.value === "" ? 0 : Number(e.target.value), // Set amount to 0 if field is cleared
+                amount: e.target.value === "" ? 0 : Number(e.target.value),
               })
             }
             InputProps={{
@@ -371,13 +328,25 @@ const FinancialGoals = () => {
             }
           />
           <TextField
+            label="Contribution Percentage"
+            type="number"
+            fullWidth
+            value={newGoal.contributionPercentage}
+            onChange={(e) =>
+              setNewGoal({
+                ...newGoal,
+                contributionPercentage: Number(e.target.value),
+              })
+            }
+          />
+          <TextField
             label="End Date"
             type="date"
             fullWidth
             InputLabelProps={{ shrink: true }}
             value={newGoal.endDate}
             onChange={handleDateChange}
-            error={dateError} // Show error if the date is invalid
+            error={dateError}
             helperText={dateError ? "Pick a valid date" : ""}
           />
         </DialogContent>

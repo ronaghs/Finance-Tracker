@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
-import { doc, deleteDoc, onSnapshot, collection } from "firebase/firestore";
-import { db } from "../firebase/firebaseconfig";
+import {
+  doc,
+  deleteDoc,
+  onSnapshot,
+  collection,
+  updateDoc,
+} from "firebase/firestore";
+import { db, auth } from "../firebase/firebaseconfig";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import IncomeEditor from "../components/IncomeEditor";
 import ExpenseEditor from "../components/ExpenseEditor";
@@ -21,6 +27,7 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
+import SavingsNotification from "../components/SavingsNotification";
 
 ChartJS.register(
   CategoryScale,
@@ -38,6 +45,8 @@ function Dashboard() {
   const [isBudgetPopupOpen, setBudgetPopupOpen] = useState(false);
   const [budgetToEdit, setBudgetToEdit] = useState(null);
   const [budgets, setBudgets] = useState([]);
+  const [goals, setGoals] = useState([]); // State to store real-time goals
+  const [notification, setNotification] = useState("");
 
   const {
     isIncomePopupOpen,
@@ -55,7 +64,58 @@ function Dashboard() {
     isExpensePopupOpen
   );
 
-  // Real-time budget updates
+  // Fetch real-time goals from Firestore
+  useEffect(() => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    const q = collection(db, "goals");
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const fetchedGoals = snapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .filter((goal) => goal.userId === userId); // Filter goals by user
+        setGoals(fetchedGoals);
+      },
+      (error) => console.error("Error fetching goals: ", error)
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  // Function to apply income to goals and generate notification
+  const applyIncomeToGoals = async (incomeAmount) => {
+    if (!goals || goals.length === 0 || incomeAmount <= 0) return;
+
+    let notificationMessage = "Savings Distributed:\n"; // Start the notification message
+
+    const updatedGoals = goals.map((goal) => {
+      const contribution = (goal.contributionPercentage / 100) * incomeAmount;
+      const newSavedAmount = goal.saved + contribution;
+
+      // Append each goal's contribution to the notification message
+      notificationMessage += `${goal.category}: $${contribution.toFixed(2)}\n`;
+
+      return { ...goal, saved: newSavedAmount };
+    });
+
+    setGoals(updatedGoals); // Update the local state
+
+    // Update Firestore for each goal with the new saved amount
+    updatedGoals.forEach(async (goal) => {
+      try {
+        const goalDocRef = doc(db, "goals", goal.id);
+        await updateDoc(goalDocRef, { saved: goal.saved });
+      } catch (error) {
+        console.error(`Error updating goal ${goal.id}:`, error);
+      }
+    });
+
+    setNotification(notificationMessage); // Set the notification message
+  };
+
+  // Real-time budget update
   useEffect(() => {
     const unsubscribe = onSnapshot(
       collection(db, "budgets"),
@@ -160,6 +220,10 @@ function Dashboard() {
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <ResponsiveAppBar />
+      <SavingsNotification
+        notification={notification}
+        setNotification={setNotification}
+      />
       <div className="container mx-auto">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">Dashboard</h2>
 
@@ -211,7 +275,7 @@ function Dashboard() {
                   </h4>
                   <div className="flex space-x-3">
                     <FaEdit
-                      //   TODO: Add edit logic here
+                      onClick={() => handleEditBudget(budget)}
                       className="text-blue-600 cursor-pointer hover:text-blue-800"
                       title="Edit Budget"
                     />
@@ -355,6 +419,8 @@ function Dashboard() {
                 <IncomeEditor
                   income={editIncome}
                   onClose={() => setIncomePopupOpen(false)}
+                  goals={goals} // Pass goals to IncomeEditor
+                  applyIncomeToGoals={applyIncomeToGoals} // Pass the function to apply income to goals
                 />
               </div>
             </div>
