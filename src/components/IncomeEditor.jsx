@@ -39,6 +39,9 @@ function IncomeEditor({ income, onClose, applyIncomeToGoals }) {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    if (name === "value" && value < 0) {
+      return; // Do nothing if value is negative
+    }
     setIncomeData((prev) => ({
       ...prev,
       [name]: name === "value" ? Number(value) : value,
@@ -46,6 +49,14 @@ function IncomeEditor({ income, onClose, applyIncomeToGoals }) {
   };
 
   const saveIncomeToDB = async () => {
+    const { name, value, date, category } = incomeData;
+    
+    // Check if all fields are filled
+    if (!name || !value || !date || !category) {
+      setMessage("Please fill out all fields before saving.");
+      return;
+    }
+    
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) return;
@@ -114,7 +125,9 @@ function IncomeEditor({ income, onClose, applyIncomeToGoals }) {
           type="number"
           name="value"
           placeholder="Enter amount"
-          value={incomeData.value}
+          value={incomeData.value === 0 ? "" : incomeData.value} // Display empty if value is 0
+          onFocus={(e) => e.target.value === "0" && setIncomeData({ ...incomeData, value: "" })} // Clear if 0 on focus
+          onBlur={(e) => !e.target.value && setIncomeData({ ...incomeData, value: 0 })} // Set back to 0 if empty on blur
           onChange={handleChange}
           className="border border-gray-300 rounded w-full p-2"
         />
