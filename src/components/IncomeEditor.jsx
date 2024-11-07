@@ -46,6 +46,14 @@ function IncomeEditor({ income, onClose, applyIncomeToGoals }) {
   };
 
   const saveIncomeToDB = async () => {
+    const { name, value, date, category } = incomeData;
+    
+    // Check if all fields are filled
+    if (!name || !value || !date || !category) {
+      setMessage("Please fill out all fields before saving.");
+      return;
+    }
+    
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) return;

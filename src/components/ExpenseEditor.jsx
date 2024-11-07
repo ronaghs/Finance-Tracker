@@ -14,7 +14,6 @@ function ExpenseEditor({ expense, onClose }) {
     const predefinedCategories = expenseCategories;
 
   const [categories, setCategories] = useState(predefinedCategories);
-
   const [expenseData, setExpenseData] = useState({
     name: "",
     value: 0,
@@ -47,6 +46,14 @@ function ExpenseEditor({ expense, onClose }) {
   };
 
   const saveExpenseToDB = async () => {
+    const { name, value, date, category } = expenseData;
+
+    // Check if all fields are filled
+    if (!name || !value || !date || !category) {
+      setMessage("Please fill out all fields before saving.");
+      return;
+    }
+
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) return;
