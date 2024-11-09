@@ -36,6 +36,12 @@ const FinancialChart = ({
     const hasNoIncome = allValuesAreZero(incomeTotals);
     const hasNoExpenses = allValuesAreZero(expenseTotals);
 
+    // Limit the arrays to the last 12 months if necessary
+    const recentMonths = months.length > 12 ? months.slice(-12) : months;
+    const recentIncomeTotals = incomeTotals.length > 12 ? incomeTotals.slice(-12) : incomeTotals;
+    const recentExpenseTotals = expenseTotals.length > 12 ? expenseTotals.slice(-12) : expenseTotals;
+    const recentNetIncomeTotals = netIncomeTotals.length > 12 ? netIncomeTotals.slice(-12) : netIncomeTotals;
+
     return (
         <div>
             {hasNoIncome && hasNoExpenses ? (
@@ -45,10 +51,10 @@ const FinancialChart = ({
             ) : (
                 <>
                     <LineChart
-                        months={months}
-                        incomeTotals={incomeTotals}
-                        expenseTotals={expenseTotals}
-                        netIncomeTotals={netIncomeTotals}
+                        months={recentMonths}
+                        incomeTotals={recentIncomeTotals}
+                        expenseTotals={recentExpenseTotals}
+                        netIncomeTotals={recentNetIncomeTotals}
                     />
 
                     <div className="mt-4 pie-charts">
