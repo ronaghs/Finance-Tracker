@@ -41,7 +41,7 @@ ChartJS.register(
 );
 
 function Dashboard() {
-  const [selected, setSelected] = useState("October 2024");
+  const [selected, setSelected] = useState("November 2024");
   const [isBudgetPopupOpen, setBudgetPopupOpen] = useState(false);
   const [budgetToEdit, setBudgetToEdit] = useState(null);
   const [budgets, setBudgets] = useState([]);
