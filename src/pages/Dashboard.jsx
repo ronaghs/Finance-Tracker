@@ -1,11 +1,4 @@
-import { useState, useEffect } from "react";
-import {
-  doc,
-  deleteDoc,
-  onSnapshot,
-  collection,
-} from "firebase/firestore";
-import { db }  from "../firebase/firebaseconfig";
+import { useState } from "react";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import IncomeEditor from "../components/IncomeEditor";
 import ExpenseEditor from "../components/ExpenseEditor";
@@ -15,6 +8,7 @@ import useIncomesAndExpenses from "../hooks/useIncomesAndExpenses";
 import usePopupState from "../hooks/usePopupState";
 import useFinancialData from "../hooks/useFinancialData";
 import useGoals from "../hooks/useGoals";
+import useBudgets from "../hooks/useBudgets";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import {
   Chart as ChartJS,
@@ -42,10 +36,8 @@ ChartJS.register(
 
 function Dashboard() {
   const { goals, applyIncomeToGoals, notification, setNotification } = useGoals();
+  const { budgets, budgetToEdit, isBudgetPopupOpen, setBudgetPopupOpen, handleEditBudget, handleDeleteBudget } = useBudgets();
   const [selected, setSelected] = useState("November 2024");
-  const [isBudgetPopupOpen, setBudgetPopupOpen] = useState(false);
-  const [budgetToEdit, setBudgetToEdit] = useState(null);
-  const [budgets, setBudgets] = useState([]);
 
   const {
     isIncomePopupOpen,
@@ -62,23 +54,6 @@ function Dashboard() {
     isIncomePopupOpen,
     isExpensePopupOpen
   );
-
-  // Real-time budget update
-  useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "budgets"),
-      (snapshot) => {
-        const updatedBudgets = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setBudgets(updatedBudgets);
-      },
-      (error) => console.error("Error fetching budgets: ", error)
-    );
-
-    return () => unsubscribe();
-  }, []);
 
   const calculateAccountBalance = () => {
     const totalIncome = incomes.reduce(
@@ -151,19 +126,6 @@ function Dashboard() {
       currentIncome: currentIncomes,
     };
   });
-
-  const handleEditBudget = (budget) => {
-    setBudgetToEdit(budget);
-    setBudgetPopupOpen(true);
-  };
-
-  const handleDeleteBudget = async (budgetId) => {
-    try {
-      await deleteDoc(doc(db, "budgets", budgetId));
-    } catch (error) {
-      console.error("Error deleting budget: ", error);
-    }
-  };
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
@@ -397,7 +359,6 @@ function Dashboard() {
                 <button
                   onClick={() => {
                     setBudgetPopupOpen(false);
-                    setBudgetToEdit(null);
                   }}
                   className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
                 >
@@ -406,7 +367,6 @@ function Dashboard() {
                 <BudgetCreator
                   onClose={() => {
                     setBudgetPopupOpen(false);
-                    setBudgetToEdit(null);
                   }}
                   budget={budgetToEdit}
                 />

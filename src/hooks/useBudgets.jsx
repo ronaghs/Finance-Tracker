@@ -1,38 +1,52 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db, auth } from "../firebase/firebaseconfig";
+import { db } from "../firebase/firebaseconfig";
+import { doc, deleteDoc, onSnapshot, collection } from "firebase/firestore";
 
 const useBudgets = () => {
-    const [budgets, setBudgets] = useState([]);
+  const [budgets, setBudgets] = useState([]);
+  const [budgetToEdit, setBudgetToEdit] = useState(null);
+  const [isBudgetPopupOpen, setBudgetPopupOpen] = useState(false);
 
-    useEffect(() => {
-        const fetchBudgets = async () => {
-            try {
-                const userId = auth.currentUser?.uid; // Get the current user's ID
-                if (!userId) return; // Exit if there's no user ID
+  // Fetch budgets from Firestore
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, "budgets"),
+      (snapshot) => {
+        const updatedBudgets = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setBudgets(updatedBudgets);
+      },
+      (error) => console.error("Error fetching budgets: ", error)
+    );
 
-                // Query to fetch budgets for the current user
-                const budgetsQuery = query(
-                    collection(db, "budgets"), // Replace with your Firestore collection name
-                    where("userId", "==", userId)
-                );
+    return () => unsubscribe();
+  }, []);
 
-                const budgetsSnapshot = await getDocs(budgetsQuery);
-                const fetchedBudgets = budgetsSnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                }));
+  // Handle editing a budget
+  const handleEditBudget = (budget) => {
+    setBudgetToEdit(budget);
+    setBudgetPopupOpen(true);
+  };
 
-                setBudgets(fetchedBudgets); // Set the fetched budgets
-            } catch (error) {
-                console.error("Error fetching budgets: ", error); // Log any errors
-            }
-        };
+  // Handle deleting a budget
+  const handleDeleteBudget = async (budgetId) => {
+    try {
+      await deleteDoc(doc(db, "budgets", budgetId));
+    } catch (error) {
+      console.error("Error deleting budget: ", error);
+    }
+  };
 
-        fetchBudgets();
-    }, []); // Empty dependency array to run only once when the component mounts
-
-    return budgets; // Return the fetched budgets
+  return {
+    budgets,
+    budgetToEdit,
+    isBudgetPopupOpen,
+    setBudgetPopupOpen,
+    handleEditBudget,
+    handleDeleteBudget,
+  };
 };
 
 export default useBudgets;
