@@ -4,9 +4,8 @@ import {
   deleteDoc,
   onSnapshot,
   collection,
-  updateDoc,
 } from "firebase/firestore";
-import { db, auth } from "../firebase/firebaseconfig";
+import { db }  from "../firebase/firebaseconfig";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import IncomeEditor from "../components/IncomeEditor";
 import ExpenseEditor from "../components/ExpenseEditor";
@@ -15,6 +14,7 @@ import BudgetCreator from "../components/BudgetCreator";
 import useIncomesAndExpenses from "../hooks/useIncomesAndExpenses";
 import usePopupState from "../hooks/usePopupState";
 import useFinancialData from "../hooks/useFinancialData";
+import useGoals from "../hooks/useGoals";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import {
   Chart as ChartJS,
@@ -41,12 +41,11 @@ ChartJS.register(
 );
 
 function Dashboard() {
+  const { goals, applyIncomeToGoals, notification, setNotification } = useGoals();
   const [selected, setSelected] = useState("November 2024");
   const [isBudgetPopupOpen, setBudgetPopupOpen] = useState(false);
   const [budgetToEdit, setBudgetToEdit] = useState(null);
   const [budgets, setBudgets] = useState([]);
-  const [goals, setGoals] = useState([]); // State to store real-time goals
-  const [notification, setNotification] = useState("");
 
   const {
     isIncomePopupOpen,
@@ -63,57 +62,6 @@ function Dashboard() {
     isIncomePopupOpen,
     isExpensePopupOpen
   );
-
-  // Fetch real-time goals from Firestore
-  useEffect(() => {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-
-    const q = collection(db, "goals");
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const fetchedGoals = snapshot.docs
-          .map((doc) => ({ id: doc.id, ...doc.data() }))
-          .filter((goal) => goal.userId === userId); // Filter goals by user
-        setGoals(fetchedGoals);
-      },
-      (error) => console.error("Error fetching goals: ", error)
-    );
-
-    return () => unsubscribe();
-  }, []);
-
-  // Function to apply income to goals and generate notification
-  const applyIncomeToGoals = async (incomeAmount) => {
-    if (!goals || goals.length === 0 || incomeAmount <= 0) return;
-
-    let notificationMessage = "Savings Distributed:\n"; // Start the notification message
-
-    const updatedGoals = goals.map((goal) => {
-      const contribution = (goal.contributionPercentage / 100) * incomeAmount;
-      const newSavedAmount = goal.saved + contribution;
-
-      // Append each goal's contribution to the notification message
-      notificationMessage += `${goal.category}: $${contribution.toFixed(2)}\n`;
-
-      return { ...goal, saved: newSavedAmount };
-    });
-
-    setGoals(updatedGoals); // Update the local state
-
-    // Update Firestore for each goal with the new saved amount
-    updatedGoals.forEach(async (goal) => {
-      try {
-        const goalDocRef = doc(db, "goals", goal.id);
-        await updateDoc(goalDocRef, { saved: goal.saved });
-      } catch (error) {
-        console.error(`Error updating goal ${goal.id}:`, error);
-      }
-    });
-
-    setNotification(notificationMessage); // Set the notification message
-  };
 
   // Real-time budget update
   useEffect(() => {
