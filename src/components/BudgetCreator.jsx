@@ -23,6 +23,14 @@ function BudgetCreator({ onClose }) {
   };
 
   const saveBudgetToDB = async () => {
+    const { type, category, startDate, endDate, value } = budgetData;
+
+    // Check if all fields are filled
+    if (!type || !category || !startDate || !endDate || !value) {
+        setMessage("Please fill in all fields before saving the budget.");
+      return;
+    }
+
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) return;
