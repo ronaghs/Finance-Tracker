@@ -22,6 +22,7 @@ import {
   ArcElement,
 } from "chart.js";
 import SavingsNotification from "../components/SavingsNotification";
+import NotificationBanner from "../components/NotificationBanner";
 
 ChartJS.register(
   CategoryScale,
@@ -35,8 +36,16 @@ ChartJS.register(
 );
 
 function Dashboard() {
-  const { goals, applyIncomeToGoals, notification, setNotification } = useGoals();
-  const { budgets, budgetToEdit, isBudgetPopupOpen, setBudgetPopupOpen, handleEditBudget, handleDeleteBudget } = useBudgets();
+  const { goals, applyIncomeToGoals, notification, setNotification } =
+    useGoals();
+  const {
+    budgets,
+    budgetToEdit,
+    isBudgetPopupOpen,
+    setBudgetPopupOpen,
+    handleEditBudget,
+    handleDeleteBudget,
+  } = useBudgets();
   const [selected, setSelected] = useState("November 2024");
 
   const {
@@ -130,6 +139,7 @@ function Dashboard() {
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       <ResponsiveAppBar />
+      <NotificationBanner goals={goals} />
       <SavingsNotification
         notification={notification}
         setNotification={setNotification}
