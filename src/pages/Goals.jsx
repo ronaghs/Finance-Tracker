@@ -19,9 +19,18 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
+import GoalNotifications from "../components/GoalNotifcations";
 import Confetti from "react-confetti";
-import { CircularProgressbar, buildStyles } from "react-circular-progressbar"; // Import circular progress bar
-import "react-circular-progressbar/dist/styles.css"; // Import default styles
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+} from "chart.js";
 import { db, auth } from "../firebase/firebaseconfig";
 import {
   collection,
@@ -33,6 +42,8 @@ import {
   where,
   onSnapshot,
 } from "firebase/firestore";
+
+ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement);
 
 const FinancialGoals = () => {
   const [goals, setGoals] = useState([]);
@@ -160,34 +171,25 @@ const FinancialGoals = () => {
     setGoals(updatedGoals);
   };
 
-  const calculateDaysRemaining = (endDate) => {
+  const calculateProjections = (goal) => {
     const today = new Date();
-    const goalDate = new Date(endDate);
-    const timeDifference = goalDate - today;
-    const daysRemaining = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
-    return daysRemaining >= 0 ? daysRemaining : 0;
+    const goalDate = new Date(goal.endDate);
+    const daysRemaining = Math.ceil((goalDate - today) / (1000 * 60 * 60 * 24));
+
+    const dailyContributionRate = goal.saved / Math.max(1, daysRemaining);
+    const projectedSavings = goal.saved + dailyContributionRate * daysRemaining;
+
+    const onTrack = projectedSavings >= goal.amount;
+    const requiredDailyContribution = onTrack
+      ? 0
+      : (goal.amount - goal.saved) / daysRemaining;
+
+    const predictedDate = onTrack
+      ? goalDate.toLocaleDateString("en-US")
+      : "Not achievable at current rate";
+
+    return { onTrack, predictedDate, daysRemaining, requiredDailyContribution };
   };
-
-  const calculatePercentageTimeLeft = (endDate) => {
-    const today = new Date();
-    const startDate = new Date(); // Assume today as the start for simplicity
-    const goalDate = new Date(endDate);
-    const totalTime = goalDate - startDate;
-    const remainingTime = goalDate - today;
-    const percentageTimeLeft = Math.max((remainingTime / totalTime) * 100, 0);
-    return percentageTimeLeft;
-  };
-
-  // TODO: Used to test circular progress bar. Remove when appropriate.
-  // const calculatePercentageTimeLeft = () => {
-  //   // Hardcoded specific percentage for testing
-  //   return 10; // Replace this with other percentages to test
-  // };
-
-  // const calculateDaysRemaining = () => {
-  //   // Hardcoded  number of days remaining for testing
-  //   return 5; // Replace with different values to test different states
-  // };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -201,6 +203,7 @@ const FinancialGoals = () => {
   return (
     <div className="bg-gray-100 min-h-screen p-6 space-y-4">
       <ResponsiveAppBar />
+      <GoalNotifications goals={goals} />
       <Button
         variant="contained"
         onClick={handleOpen}
@@ -213,8 +216,12 @@ const FinancialGoals = () => {
         {goals.map((goal, index) => {
           const progress = (goal.saved / goal.amount) * 100;
           const cappedProgress = Math.min(progress, 100);
-          const daysRemaining = calculateDaysRemaining(goal.endDate);
-          const percentageTimeLeft = calculatePercentageTimeLeft(goal.endDate);
+          const {
+            onTrack,
+            predictedDate,
+            daysRemaining,
+            requiredDailyContribution,
+          } = calculateProjections(goal);
 
           return (
             <Card
@@ -235,11 +242,11 @@ const FinancialGoals = () => {
                   >
                     <div className="w-16 h-16 mr-4">
                       <CircularProgressbar
-                        value={percentageTimeLeft}
+                        value={progress}
                         text={`${daysRemaining}d`}
                         styles={buildStyles({
-                          textColor: daysRemaining <= 3 ? "#f44336" : "#000",
-                          pathColor: daysRemaining <= 3 ? "#f44336" : "#4caf50",
+                          textColor: onTrack ? "#4caf50" : "#f44336",
+                          pathColor: onTrack ? "#4caf50" : "#f44336",
                           trailColor: "#d6d6d6",
                         })}
                       />
@@ -262,6 +269,59 @@ const FinancialGoals = () => {
                 <Typography variant="body2" className="text-sm">{`${Math.round(
                   progress
                 )}% of your goal reached`}</Typography>
+                <Typography
+                  className={`text-sm font-bold ${
+                    onTrack ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  Predicted to reach: {predictedDate}
+                </Typography>
+                {!onTrack && requiredDailyContribution > 0 && (
+                  <Typography className="text-sm text-orange-600">
+                    Aim to save ${requiredDailyContribution.toFixed(2)} per day
+                    to get back on track.
+                  </Typography>
+                )}
+
+                <div className="mt-4">
+                  <Line
+                    data={{
+                      labels: Array.from(
+                        { length: daysRemaining },
+                        (_, i) => `Day ${i + 1}`
+                      ),
+                      datasets: [
+                        {
+                          label: "Required Savings",
+                          data: Array.from(
+                            { length: daysRemaining },
+                            (_, i) => (i + 1) * (goal.amount / daysRemaining)
+                          ),
+                          borderColor: "blue",
+                          fill: false,
+                        },
+                        {
+                          label: "Projected Savings",
+                          data: Array.from(
+                            { length: daysRemaining },
+                            (_, i) =>
+                              goal.saved +
+                              (goal.saved / (daysRemaining || 1)) * (i + 1)
+                          ),
+                          borderColor: onTrack ? "green" : "red",
+                          fill: false,
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      plugins: {
+                        legend: { display: true },
+                        tooltip: { enabled: true },
+                      },
+                    }}
+                  />
+                </div>
               </CardContent>
               <CardActions>
                 <TextField
