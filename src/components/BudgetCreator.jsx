@@ -3,13 +3,14 @@ import PropTypes from "prop-types";
 import { saveBudget } from "../services/budgetService";
 import { incomeCategories, expenseCategories } from "../constants/categories";
 
-function BudgetCreator({ onClose }) {
+function BudgetCreator({ onClose, budgetToEdit }) {
   const [budgetData, setBudgetData] = useState({
-    type: "income",
-    category: "",
-    startDate: "",
-    endDate: "",
-    value: 0,
+    type: budgetToEdit?.type || "income",
+    category: budgetToEdit?.category || "",
+    startDate: budgetToEdit?.startDate || "",
+    endDate: budgetToEdit?.endDate || "",
+    value: budgetToEdit?.value || 0,
+    id: budgetToEdit?.id || null, // Track if this is an existing budget
   });
   const [message, setMessage] = useState("");
 
@@ -112,6 +113,7 @@ function BudgetCreator({ onClose }) {
 
 BudgetCreator.propTypes = {
   onClose: PropTypes.func.isRequired,
+  budgetToEdit: PropTypes.object,
 };
 
 export default BudgetCreator;
