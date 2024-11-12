@@ -1,12 +1,11 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { db, auth } from "../firebase/firebaseconfig";
-import { collection, addDoc } from "firebase/firestore";
+import { saveBudget } from "../services/budgetService";
 import { incomeCategories, expenseCategories } from "../constants/categories";
 
 function BudgetCreator({ onClose }) {
   const [budgetData, setBudgetData] = useState({
-    type: "income", // Default to "income"
+    type: "income",
     category: "",
     startDate: "",
     endDate: "",
@@ -22,23 +21,14 @@ function BudgetCreator({ onClose }) {
     }));
   };
 
-  const saveBudgetToDB = async () => {
-    const { type, category, startDate, endDate, value } = budgetData;
-
-    // Check if all fields are filled
-    if (!type || !category || !startDate || !endDate || !value) {
-        setMessage("Please fill in all fields before saving the budget.");
+  const handleSaveBudget = async () => {
+    if (!validateBudgetData(budgetData)) {
+      setMessage("Please fill in all fields before saving the budget.");
       return;
     }
 
     try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) return;
-
-      await addDoc(collection(db, "budgets"), {
-        ...budgetData,
-        userId,
-      });
+      await saveBudget(budgetData);
       setMessage("Budget saved successfully!");
       onClose();
     } catch (error) {
@@ -47,7 +37,6 @@ function BudgetCreator({ onClose }) {
     }
   };
 
-  // Get categories based on the selected type
   const categories = budgetData.type === "income" ? incomeCategories : expenseCategories;
 
   return (
@@ -113,7 +102,7 @@ function BudgetCreator({ onClose }) {
       />
 
       {/* Save Button */}
-      <button onClick={saveBudgetToDB} className="bg-green-500 text-white p-2 mt-4">
+      <button onClick={handleSaveBudget} className="bg-green-500 text-white p-2 mt-4">
         Save Budget
       </button>
       {message && <p>{message}</p>}
@@ -126,3 +115,8 @@ BudgetCreator.propTypes = {
 };
 
 export default BudgetCreator;
+
+function validateBudgetData(budgetData) {
+  const { type, category, startDate, endDate, value } = budgetData;
+  return type && category && startDate && endDate && value;
+}
