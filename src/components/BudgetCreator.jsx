@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { saveBudget } from "../services/budgetService";
 import { incomeCategories, expenseCategories } from "../constants/categories";
@@ -6,14 +6,28 @@ import { incomeCategories, expenseCategories } from "../constants/categories";
 function BudgetCreator({ onClose, budgetToEdit }) {
   console.log(budgetToEdit)
   const [budgetData, setBudgetData] = useState({
-    type: budgetToEdit?.type || "income",
-    category: budgetToEdit?.category || "",
-    startDate: budgetToEdit?.startDate || "",
-    endDate: budgetToEdit?.endDate || "",
-    value: budgetToEdit?.value || 0,
-    id: budgetToEdit?.id || null, // Track if this is an existing budget
+    type: "income", 
+    category: "", 
+    startDate: "", 
+    endDate: "", 
+    value: 0, 
+    id: null, 
   });
   const [message, setMessage] = useState("");
+
+  // Initialize form fields when `budgetToEdit` changes (e.g., when editing an existing budget)
+  useEffect(() => {
+    if (budgetToEdit) {
+      setBudgetData({
+        type: budgetToEdit.type || "income",
+        category: budgetToEdit.category || "",
+        startDate: budgetToEdit.startDate || "",
+        endDate: budgetToEdit.endDate || "",
+        value: budgetToEdit.value || 0,
+        id: budgetToEdit.id || null,
+      });
+    }
+  }, [budgetToEdit]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
