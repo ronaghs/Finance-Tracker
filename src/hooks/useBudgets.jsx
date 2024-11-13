@@ -11,8 +11,12 @@ const useBudgets = () => {
     return () => unsubscribe();
   }, []);
 
+  const handleCreateBudget = () => {
+    handleEditBudget(null); 
+    setBudgetPopupOpen(true);
+  };
+
   const handleEditBudget = (budget) => {
-    console.log(budget)
     setBudgetToEdit(budget);
     setBudgetPopupOpen(true);
   };
@@ -30,6 +34,7 @@ const useBudgets = () => {
     budgetToEdit,
     isBudgetPopupOpen,
     setBudgetPopupOpen,
+    handleCreateBudget,
     handleEditBudget,
     handleDeleteBudget,
   };
