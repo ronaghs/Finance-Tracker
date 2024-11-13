@@ -147,54 +147,116 @@ function Dashboard() {
         setNotification={setNotification}
       />
       <div className="container mx-auto">
-        <h2 className="text-3xl font-bold mb-6 text-gray-800">Dashboard</h2>
+        <h2 className="text-4xl font-extrabold text-gray-800 mb-4 md:mb-6 border-b-4 border-blue-500 pb-2">
+          Dashboard
+        </h2>
 
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold text-gray-800">
-            Account Balance
-          </h3>
-          <p
-            className={`text-2xl font-bold ${
-              accountBalance >= 0 ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            ${accountBalance.toFixed(2)}
-          </p>
+        {/* Account Balance Section */}
+        <div className="mb-8">
+          <div className="p-6 bg-white rounded-lg shadow-lg flex items-center justify-between">
+            <p className="text-3xl font-bold text-gray-800">Account Balance:</p>
+            <p className={`text-4xl font-extrabold ${accountBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+              ${accountBalance.toFixed(2)}
+            </p>
+          </div>
         </div>
 
+        {/* Month Selector */}
         <div className="flex flex-col md:flex-row items-center mb-6">
-          <label
-            htmlFor="month-selector"
-            className="mb-2 md:mb-0 mr-4 text-lg font-medium text-gray-700"
-          >
+          <label htmlFor="month-selector" className="mb-2 md:mb-0 mr-4 text-2xl font-semibold text-gray-800">
             Select Month:
           </label>
           <select
             id="month-selector"
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
-            className="border border-gray-300 rounded-lg p-2 text-lg w-full md:w-auto"
+            className="border border-gray-300 rounded-lg p-3 text-lg w-full md:w-auto bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
           >
             {months.map((month) => (
-              <option key={month} value={month}>
+              <option key={month} value={month} className="text-lg">
                 {month}
               </option>
             ))}
           </select>
         </div>
 
+        {/* Financial Chart */}
+        <FinancialChart
+          months={months}
+          incomeTotals={incomeTotals}
+          expenseTotals={expenseTotals}
+          netIncomeTotals={netIncomeTotals}
+          selectedMonth={selectedMonth}
+          selectedIncome={filteredIncomes}
+          selectedExpenses={filteredExpenses}
+        />
+
+        {/* Incomes Section */}
         <div className="mt-8">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Budgets</h3>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-2xl font-semibold text-gray-800">Incomes</h3>
+            <button
+              onClick={() => openIncomeEditor()}
+              className="bg-green-500 hover:bg-green-700 text-white py-3 px-6 rounded-lg shadow-lg flex items-center justify-center text-center transition duration-200 transform hover:scale-105"
+            >
+              <i className="fas fa-plus mr-3"></i> Add Income
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredIncomes.map((income) => (
+              <div key={income.id} className="bg-white p-6 shadow-lg rounded-lg relative border border-green-100 hover:border-green-300 transition duration-200 ease-in-out transform hover:scale-105">
+                <h4 className="text-lg font-semibold text-green-600">{income.name}</h4>
+                <p className="text-sm text-gray-500">{income.date}</p>
+                <p className="text-2xl font-bold text-gray-800 mt-2">${income.value.toFixed(2)}</p>
+                <button onClick={() => openIncomeEditor(income)} className="mt-4 text-green-500 hover:text-green-700 font-medium flex items-center">
+                  <i className="fas fa-pen mr-2"></i> Edit
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Expenses Section */}
+        <div className="mt-8">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-2xl font-semibold text-gray-800">Expenses</h3>
+            <button
+              onClick={() => openExpenseEditor()}
+              className="bg-red-500 hover:bg-red-700 text-white py-3 px-6 rounded-lg shadow-lg flex items-center justify-center text-center transition duration-200 transform hover:scale-105"
+            >
+              <i className="fas fa-plus mr-3"></i> Add Expense
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredExpenses.map((expense) => (
+              <div key={expense.id} className="bg-white p-6 shadow-lg rounded-lg relative border border-red-100 hover:border-red-300 transition duration-200 ease-in-out transform hover:scale-105">
+                <h4 className="text-lg font-semibold text-red-600">{expense.name}</h4>
+                <p className="text-sm text-gray-500">{expense.date}</p>
+                <p className="text-2xl font-bold text-gray-800 mt-2">${expense.value.toFixed(2)}</p>
+                <button onClick={() => openExpenseEditor(expense)} className="mt-4 text-red-500 hover:text-red-700 font-medium flex items-center">
+                  <i className="fas fa-pen mr-2"></i> Edit
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Budgets Section */}
+        <div className="mt-8">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-2xl font-semibold text-gray-800">Budgets</h3>
+            <button
+              onClick={() => handleCreateBudget()}
+              className="bg-blue-500 hover:bg-blue-700 text-white py-3 px-6 rounded-lg shadow-lg flex items-center justify-center text-center transition duration-200 transform hover:scale-105"
+            >
+              <i className="fas fa-plus mr-3"></i> Create Budget
+            </button>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {budgetData.map((budget) => (
-              <div
-                key={budget.id}
-                className="bg-white p-6 shadow-lg rounded-xl transition-transform transform hover:scale-105 hover:shadow-xl relative"
-              >
-                <div className="flex justify-between items-center">
-                  <h4 className="text-lg font-semibold text-blue-600">
-                    {budget.category}
-                  </h4>
+              <div key={budget.id} className="bg-white p-6 shadow-lg rounded-xl transition-transform transform hover:scale-105 hover:shadow-xl relative">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="text-lg font-semibold text-blue-600">{budget.category}</h4>
                   <div className="flex space-x-3">
                     <FaEdit
                       onClick={() => handleEditBudget(budget)}
@@ -208,184 +270,60 @@ function Dashboard() {
                     />
                   </div>
                 </div>
-                <div className="mt-3 text-sm text-gray-600">
-                  <p className="mb-1">
-                    <span className="font-medium">Budget:</span> $
-                    {budget.value}
-                  </p>
-                  {budget.currentSpending !== null && (
-                    <p className="mb-1">
-                      <span className="font-medium">Current Spending:</span> $
-                      {budget.currentSpending.toFixed(2)}
-                    </p>
-                  )}
-                  {budget.currentIncome !== null && (
-                    <p className="mb-1">
-                      <span className="font-medium">Current Income:</span> $
-                      {budget.currentIncome.toFixed(2)}
-                    </p>
-                  )}
-                  <p className="mb-1">
-                    <span className="font-medium">Start Date:</span>{" "}
-                    {budget.startDate}
-                  </p>
-                  <p>
-                    <span className="font-medium">End Date:</span>{" "}
-                    {budget.endDate}
-                  </p>
+                <div className="text-sm text-gray-600">
+                  <p className="mb-1"><span className="font-medium">Budget:</span> ${budget.value}</p>
+                  {budget.currentSpending !== null && <p className="mb-1"><span className="font-medium">Current Spending:</span> ${budget.currentSpending.toFixed(2)}</p>}
+                  {budget.currentIncome !== null && <p className="mb-1"><span className="font-medium">Current Income:</span> ${budget.currentIncome.toFixed(2)}</p>}
+                  <p className="mb-1"><span className="font-medium">Start Date:</span> {budget.startDate}</p>
+                  <p><span className="font-medium">End Date:</span> {budget.endDate}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <FinancialChart
-          months={months}
-          incomeTotals={incomeTotals}
-          expenseTotals={expenseTotals}
-          netIncomeTotals={netIncomeTotals}
-          selectedMonth={selectedMonth}
-          selectedIncome={filteredIncomes}
-          selectedExpenses={filteredExpenses}
-        />
-
-        <div className="container mx-auto mt-8">
-          <div className="flex justify-between flex-col md:flex-row mb-6 gap-4">
-            <button
-              onClick={() => openIncomeEditor()}
-              className="btn btn-primary bg-blue-500 hover:bg-blue-700 text-white py-2 px-4 rounded-lg shadow-lg flex items-center justify-center"
-            >
-              <i className="fas fa-plus mr-2"></i> Add Income
-            </button>
-            <button
-              onClick={() => openExpenseEditor()}
-              className="btn btn-danger bg-red-500 hover:bg-red-700 text-white py-2 px-4 rounded-lg shadow-lg flex items-center justify-center"
-            >
-              <i className="fas fa-plus mr-2"></i> Add Expense
-            </button>
-            <button
-              onClick={() => handleCreateBudget()}
-              className="btn btn-warning bg-yellow-500 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg shadow-lg flex items-center justify-center"
-            >
-              <i className="fas fa-plus mr-2"></i> Create Budget
-            </button>
-          </div>
-
-          {/* Income Cards */}
-          <div className="mt-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
-              Incomes
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredIncomes.map((income) => (
-                <div
-                  key={income.id}
-                  className="bg-white p-6 shadow-lg rounded-lg relative border border-blue-100 hover:border-blue-300 transition duration-200 ease-in-out transform hover:scale-105"
-                >
-                  <h4 className="text-lg font-semibold text-blue-600">
-                    {income.name}
-                  </h4>
-                  <p className="text-sm text-gray-500">{income.date}</p>
-                  <p className="text-xl font-bold text-gray-800 mt-2">
-                    ${income.value}
-                  </p>
-                  <button
-                    onClick={() => openIncomeEditor(income)}
-                    className="mt-4 text-blue-500 hover:text-blue-700 font-medium flex items-center"
-                  >
-                    <i className="fas fa-pen mr-2"></i> Edit
-                  </button>
-                </div>
-              ))}
+        {/* Popup Modals for Editing */}
+        {isIncomePopupOpen && (
+          <div className="popup fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="popup-content bg-white p-6 rounded-lg shadow-lg relative w-full max-w-md">
+              <button onClick={() => setIncomePopupOpen(false)} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+                &times;
+              </button>
+              <IncomeEditor income={editIncome} onClose={() => setIncomePopupOpen(false)} goals={goals} applyIncomeToGoals={applyIncomeToGoals} />
             </div>
           </div>
+        )}
 
-          {/* Expense Cards */}
-          <div className="mt-8">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
-              Expenses
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredExpenses.map((expense) => (
-                <div
-                  key={expense.id}
-                  className="bg-white p-6 shadow-lg rounded-lg relative border border-red-100 hover:border-red-300 transition duration-200 ease-in-out transform hover:scale-105"
-                >
-                  <h4 className="text-lg font-semibold text-red-600">
-                    {expense.name}
-                  </h4>
-                  <p className="text-sm text-gray-500">{expense.date}</p>
-                  <p className="text-xl font-bold text-gray-800 mt-2">
-                    ${expense.value}
-                  </p>
-                  <button
-                    onClick={() => openExpenseEditor(expense)}
-                    className="mt-4 text-red-500 hover:text-red-700 font-medium flex items-center"
-                  >
-                    <i className="fas fa-pen mr-2"></i> Edit
-                  </button>
-                </div>
-              ))}
+        {isExpensePopupOpen && (
+          <div className="popup fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="popup-content bg-white p-6 rounded-lg shadow-lg relative w-full max-w-md">
+              <button onClick={() => setExpensePopupOpen(false)} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+                &times;
+              </button>
+              <ExpenseEditor expense={editExpense} onClose={() => setExpensePopupOpen(false)} />
             </div>
           </div>
+        )}
 
-          {isIncomePopupOpen && (
-            <div className="popup fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-              <div className="popup-content bg-white p-6 rounded-lg shadow-lg relative w-full max-w-md">
-                <button
-                  onClick={() => setIncomePopupOpen(false)}
-                  className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                >
-                  &times;
-                </button>
-                <IncomeEditor
-                  income={editIncome}
-                  onClose={() => setIncomePopupOpen(false)}
-                  goals={goals} // Pass goals to IncomeEditor
-                  applyIncomeToGoals={applyIncomeToGoals} // Pass the function to apply income to goals
-                />
-              </div>
+        {isBudgetPopupOpen && (
+          <div className="popup fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="popup-content bg-white p-6 rounded-lg shadow-lg relative w-full max-w-md">
+              <button
+                onClick={() => {
+                  setBudgetPopupOpen(false);
+                }}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+                &times;
+              </button>
+              <BudgetCreator
+                onClose={() => {
+                  setBudgetPopupOpen(false);
+                }}
+                budgetToEdit={budgetToEdit}
+              />
             </div>
-          )}
-
-          {isExpensePopupOpen && (
-            <div className="popup fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-              <div className="popup-content bg-white p-6 rounded-lg shadow-lg relative w-full max-w-md">
-                <button
-                  onClick={() => setExpensePopupOpen(false)}
-                  className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                >
-                  &times;
-                </button>
-                <ExpenseEditor
-                  expense={editExpense}
-                  onClose={() => setExpensePopupOpen(false)}
-                />
-              </div>
-            </div>
-          )}
-
-          {isBudgetPopupOpen && (
-            <div className="popup fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-              <div className="popup-content bg-white p-6 rounded-lg shadow-lg relative w-full max-w-md">
-                <button
-                  onClick={() => {
-                    setBudgetPopupOpen(false);
-                  }}
-                  className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-                >
-                  &times;
-                </button>
-                <BudgetCreator
-                  onClose={() => {
-                    setBudgetPopupOpen(false);
-                  }}
-                  budgetToEdit={budgetToEdit}
-                />
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

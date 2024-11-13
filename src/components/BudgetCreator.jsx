@@ -4,7 +4,6 @@ import { saveBudget } from "../services/budgetService";
 import { incomeCategories, expenseCategories } from "../constants/categories";
 
 function BudgetCreator({ onClose, budgetToEdit }) {
-  console.log(budgetToEdit)
   const [budgetData, setBudgetData] = useState({
     type: "income", 
     category: "", 
