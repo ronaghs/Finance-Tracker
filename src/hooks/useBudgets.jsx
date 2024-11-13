@@ -12,6 +12,7 @@ const useBudgets = () => {
   }, []);
 
   const handleEditBudget = (budget) => {
+    console.log(budget)
     setBudgetToEdit(budget);
     setBudgetPopupOpen(true);
   };

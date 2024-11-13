@@ -378,7 +378,7 @@ function Dashboard() {
                   onClose={() => {
                     setBudgetPopupOpen(false);
                   }}
-                  budget={budgetToEdit}
+                  budgetToEdit={budgetToEdit}
                 />
               </div>
             </div>
