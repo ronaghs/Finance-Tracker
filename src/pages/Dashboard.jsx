@@ -43,6 +43,7 @@ function Dashboard() {
     budgetToEdit,
     isBudgetPopupOpen,
     setBudgetPopupOpen,
+    handleCreateBudget,
     handleEditBudget,
     handleDeleteBudget,
   } = useBudgets();
@@ -127,10 +128,11 @@ function Dashboard() {
 
     return {
       id: budget.id,
+      type: budget.type,
       category: budget.category,
-      budgetValue: budget.value,
-      budgetStartDate: budget.startDate,
-      budgetEndDate: budget.endDate,
+      value: budget.value,
+      startDate: budget.startDate,
+      endDate: budget.endDate,
       currentSpending: currentExpenses,
       currentIncome: currentIncomes,
     };
@@ -209,7 +211,7 @@ function Dashboard() {
                 <div className="mt-3 text-sm text-gray-600">
                   <p className="mb-1">
                     <span className="font-medium">Budget:</span> $
-                    {budget.budgetValue}
+                    {budget.value}
                   </p>
                   {budget.currentSpending !== null && (
                     <p className="mb-1">
@@ -225,11 +227,11 @@ function Dashboard() {
                   )}
                   <p className="mb-1">
                     <span className="font-medium">Start Date:</span>{" "}
-                    {budget.budgetStartDate}
+                    {budget.startDate}
                   </p>
                   <p>
                     <span className="font-medium">End Date:</span>{" "}
-                    {budget.budgetEndDate}
+                    {budget.endDate}
                   </p>
                 </div>
               </div>
@@ -262,7 +264,7 @@ function Dashboard() {
               <i className="fas fa-plus mr-2"></i> Add Expense
             </button>
             <button
-              onClick={() => setBudgetPopupOpen(true)}
+              onClick={() => handleCreateBudget()}
               className="btn btn-warning bg-yellow-500 hover:bg-yellow-700 text-white py-2 px-4 rounded-lg shadow-lg flex items-center justify-center"
             >
               <i className="fas fa-plus mr-2"></i> Create Budget
@@ -378,7 +380,7 @@ function Dashboard() {
                   onClose={() => {
                     setBudgetPopupOpen(false);
                   }}
-                  budget={budgetToEdit}
+                  budgetToEdit={budgetToEdit}
                 />
               </div>
             </div>
