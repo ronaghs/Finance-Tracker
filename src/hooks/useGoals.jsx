@@ -25,27 +25,48 @@ function useGoals() {
   }, []);
 
   const applyIncomeToGoals = async (incomeAmount) => {
-    if (!goals || goals.length === 0 || incomeAmount <= 0) return;
+    if (!goals || goals.length === 0 || incomeAmount <= 0) return incomeAmount;
 
+    console.log("Initial Income Amount:", incomeAmount); // Debug
+    let remainingIncome = incomeAmount;
     let notificationMessage = "Savings Distributed:\n";
-    const updatedGoals = goals.map((goal) => {
-      const contribution = (goal.contributionPercentage / 100) * incomeAmount;
-      const newSavedAmount = goal.saved + contribution;
-      notificationMessage += `${goal.category}: $${contribution.toFixed(2)}\n`;
 
-      return { ...goal, saved: newSavedAmount };
-    });
+    const updatedGoals = [];
 
-    setGoals(updatedGoals);
-    updatedGoals.forEach(async (goal) => {
-      try {
-        const goalDocRef = doc(db, "goals", goal.id);
-        await updateDoc(goalDocRef, { saved: goal.saved });
-      } catch (error) {
-        console.error(`Error updating goal ${goal.id}:`, error);
+    for (const goal of goals) {
+      if (remainingIncome <= 0) break;
+
+      const contribution = Math.min(
+        (goal.contributionPercentage / 100) * incomeAmount,
+        goal.amount - goal.saved
+      );
+
+      if (contribution > 0) {
+        const newSavedAmount = goal.saved + contribution;
+        remainingIncome -= contribution;
+
+        updatedGoals.push({ ...goal, saved: newSavedAmount });
+
+        try {
+          const goalDocRef = doc(db, "goals", goal.id);
+          await updateDoc(goalDocRef, { saved: newSavedAmount });
+          console.log(
+            `Updated Goal: ${goal.category}, Contribution: ${contribution}`
+          ); // Debug
+        } catch (error) {
+          console.error(`Error updating goal ${goal.id}:`, error);
+        }
+
+        notificationMessage += `${goal.category}: $${contribution.toFixed(
+          2
+        )}\n`;
       }
-    });
+    }
+
+    console.log("Remaining Income After Contributions:", remainingIncome); // Debug
+    setGoals(updatedGoals);
     setNotification(notificationMessage);
+    return remainingIncome;
   };
 
   return { goals, applyIncomeToGoals, notification, setNotification };

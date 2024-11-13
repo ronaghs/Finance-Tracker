@@ -157,18 +157,58 @@ const FinancialGoals = () => {
 
   const handleContribution = async (index) => {
     const userId = auth.currentUser?.uid;
-    if (!userId) return;
+    if (!userId) {
+      alert("User not authenticated!");
+      return;
+    }
 
     const goal = goals[index];
-    const newSaved = goal.saved + goal.contribution;
+    const contributionAmount = goal.contribution;
+
+    // Validate contributionAmount
+    if (!contributionAmount || contributionAmount <= 0) {
+      alert("Please enter a valid contribution amount!");
+      return;
+    }
+
+    const newSaved = goal.saved + contributionAmount;
+
+    // Check if goal is achieved
     if (newSaved >= goal.amount) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 5000);
     }
+
+    // Update the goal locally and in Firebase
     const updatedGoal = { ...goal, saved: newSaved, contribution: 0 };
-    await updateDoc(doc(db, "goals", goal.id), updatedGoal);
-    const updatedGoals = goals.map((g, i) => (i === index ? updatedGoal : g));
-    setGoals(updatedGoals);
+
+    try {
+      // Update goal in Firestore
+      await updateDoc(doc(db, "goals", goal.id), updatedGoal);
+
+      // Add contribution as an expense to Firestore
+      const expenseEntry = {
+        userId,
+        name: `Contribution to ${goal.category}`,
+        value: contributionAmount,
+        date: new Date().toISOString(),
+        category: "Savings Contribution",
+      };
+      await addDoc(collection(db, "expenses"), expenseEntry);
+
+      // Update state
+      const updatedGoals = goals.map((g, i) => (i === index ? updatedGoal : g));
+      setGoals(updatedGoals);
+
+      console.log(
+        "Goal and expense updated successfully:",
+        updatedGoal,
+        expenseEntry
+      );
+    } catch (error) {
+      console.error("Error updating goal or adding expense:", error);
+      alert("Failed to update goal or add expense. Please try again.");
+    }
   };
 
   const calculateProjections = (goal) => {

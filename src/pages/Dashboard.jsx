@@ -67,7 +67,7 @@ function Dashboard() {
 
   const calculateAccountBalance = () => {
     const totalIncome = incomes.reduce(
-      (acc, income) => acc + Number(income.value),
+      (acc, income) => acc + Number(income.originalValue || income.value),
       0
     );
     const totalExpenses = expenses.reduce(
@@ -155,7 +155,11 @@ function Dashboard() {
         <div className="mb-8">
           <div className="p-6 bg-white rounded-lg shadow-lg flex items-center justify-between">
             <p className="text-3xl font-bold text-gray-800">Account Balance:</p>
-            <p className={`text-4xl font-extrabold ${accountBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+            <p
+              className={`text-4xl font-extrabold ${
+                accountBalance >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
               ${accountBalance.toFixed(2)}
             </p>
           </div>
@@ -163,7 +167,10 @@ function Dashboard() {
 
         {/* Month Selector */}
         <div className="flex flex-col md:flex-row items-center mb-6">
-          <label htmlFor="month-selector" className="mb-2 md:mb-0 mr-4 text-2xl font-semibold text-gray-800">
+          <label
+            htmlFor="month-selector"
+            className="mb-2 md:mb-0 mr-4 text-2xl font-semibold text-gray-800"
+          >
             Select Month:
           </label>
           <select
@@ -204,11 +211,28 @@ function Dashboard() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredIncomes.map((income) => (
-              <div key={income.id} className="bg-white p-6 shadow-lg rounded-lg relative border border-green-100 hover:border-green-300 transition duration-200 ease-in-out transform hover:scale-105">
-                <h4 className="text-lg font-semibold text-green-600">{income.name}</h4>
+              <div
+                key={income.id}
+                className="bg-white p-6 shadow-lg rounded-lg relative border border-green-100 hover:border-green-300 transition duration-200 ease-in-out transform hover:scale-105"
+              >
+                <h4 className="text-lg font-semibold text-green-600">
+                  {income.name}
+                </h4>
                 <p className="text-sm text-gray-500">{income.date}</p>
-                <p className="text-2xl font-bold text-gray-800 mt-2">${income.value.toFixed(2)}</p>
-                <button onClick={() => openIncomeEditor(income)} className="mt-4 text-green-500 hover:text-green-700 font-medium flex items-center">
+                <p className="text-2xl font-bold text-gray-800 mt-2">
+                  ${income.value.toFixed(2)}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Saved to goals: $
+                  {(income.originalValue
+                    ? income.originalValue - income.value
+                    : 0
+                  ).toFixed(2)}
+                </p>
+                <button
+                  onClick={() => openIncomeEditor(income)}
+                  className="mt-4 text-green-500 hover:text-green-700 font-medium flex items-center"
+                >
                   <i className="fas fa-pen mr-2"></i> Edit
                 </button>
               </div>
@@ -229,11 +253,21 @@ function Dashboard() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredExpenses.map((expense) => (
-              <div key={expense.id} className="bg-white p-6 shadow-lg rounded-lg relative border border-red-100 hover:border-red-300 transition duration-200 ease-in-out transform hover:scale-105">
-                <h4 className="text-lg font-semibold text-red-600">{expense.name}</h4>
+              <div
+                key={expense.id}
+                className="bg-white p-6 shadow-lg rounded-lg relative border border-red-100 hover:border-red-300 transition duration-200 ease-in-out transform hover:scale-105"
+              >
+                <h4 className="text-lg font-semibold text-red-600">
+                  {expense.name}
+                </h4>
                 <p className="text-sm text-gray-500">{expense.date}</p>
-                <p className="text-2xl font-bold text-gray-800 mt-2">${expense.value.toFixed(2)}</p>
-                <button onClick={() => openExpenseEditor(expense)} className="mt-4 text-red-500 hover:text-red-700 font-medium flex items-center">
+                <p className="text-2xl font-bold text-gray-800 mt-2">
+                  ${expense.value.toFixed(2)}
+                </p>
+                <button
+                  onClick={() => openExpenseEditor(expense)}
+                  className="mt-4 text-red-500 hover:text-red-700 font-medium flex items-center"
+                >
                   <i className="fas fa-pen mr-2"></i> Edit
                 </button>
               </div>
@@ -254,9 +288,14 @@ function Dashboard() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {budgetData.map((budget) => (
-              <div key={budget.id} className="bg-white p-6 shadow-lg rounded-xl transition-transform transform hover:scale-105 hover:shadow-xl relative">
+              <div
+                key={budget.id}
+                className="bg-white p-6 shadow-lg rounded-xl transition-transform transform hover:scale-105 hover:shadow-xl relative"
+              >
                 <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-lg font-semibold text-blue-600">{budget.category}</h4>
+                  <h4 className="text-lg font-semibold text-blue-600">
+                    {budget.category}
+                  </h4>
                   <div className="flex space-x-3">
                     <FaEdit
                       onClick={() => handleEditBudget(budget)}
@@ -271,11 +310,29 @@ function Dashboard() {
                   </div>
                 </div>
                 <div className="text-sm text-gray-600">
-                  <p className="mb-1"><span className="font-medium">Budget:</span> ${budget.value}</p>
-                  {budget.currentSpending !== null && <p className="mb-1"><span className="font-medium">Current Spending:</span> ${budget.currentSpending.toFixed(2)}</p>}
-                  {budget.currentIncome !== null && <p className="mb-1"><span className="font-medium">Current Income:</span> ${budget.currentIncome.toFixed(2)}</p>}
-                  <p className="mb-1"><span className="font-medium">Start Date:</span> {budget.startDate}</p>
-                  <p><span className="font-medium">End Date:</span> {budget.endDate}</p>
+                  <p className="mb-1">
+                    <span className="font-medium">Budget:</span> ${budget.value}
+                  </p>
+                  {budget.currentSpending !== null && (
+                    <p className="mb-1">
+                      <span className="font-medium">Current Spending:</span> $
+                      {budget.currentSpending.toFixed(2)}
+                    </p>
+                  )}
+                  {budget.currentIncome !== null && (
+                    <p className="mb-1">
+                      <span className="font-medium">Current Income:</span> $
+                      {budget.currentIncome.toFixed(2)}
+                    </p>
+                  )}
+                  <p className="mb-1">
+                    <span className="font-medium">Start Date:</span>{" "}
+                    {budget.startDate}
+                  </p>
+                  <p>
+                    <span className="font-medium">End Date:</span>{" "}
+                    {budget.endDate}
+                  </p>
                 </div>
               </div>
             ))}
@@ -286,10 +343,18 @@ function Dashboard() {
         {isIncomePopupOpen && (
           <div className="popup fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div className="popup-content bg-white p-6 rounded-lg shadow-lg relative w-full max-w-md">
-              <button onClick={() => setIncomePopupOpen(false)} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+              <button
+                onClick={() => setIncomePopupOpen(false)}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              >
                 &times;
               </button>
-              <IncomeEditor income={editIncome} onClose={() => setIncomePopupOpen(false)} goals={goals} applyIncomeToGoals={applyIncomeToGoals} />
+              <IncomeEditor
+                income={editIncome}
+                onClose={() => setIncomePopupOpen(false)}
+                goals={goals}
+                applyIncomeToGoals={applyIncomeToGoals}
+              />
             </div>
           </div>
         )}
@@ -297,10 +362,16 @@ function Dashboard() {
         {isExpensePopupOpen && (
           <div className="popup fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
             <div className="popup-content bg-white p-6 rounded-lg shadow-lg relative w-full max-w-md">
-              <button onClick={() => setExpensePopupOpen(false)} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+              <button
+                onClick={() => setExpensePopupOpen(false)}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              >
                 &times;
               </button>
-              <ExpenseEditor expense={editExpense} onClose={() => setExpensePopupOpen(false)} />
+              <ExpenseEditor
+                expense={editExpense}
+                onClose={() => setExpensePopupOpen(false)}
+              />
             </div>
           </div>
         )}
@@ -312,7 +383,8 @@ function Dashboard() {
                 onClick={() => {
                   setBudgetPopupOpen(false);
                 }}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              >
                 &times;
               </button>
               <BudgetCreator

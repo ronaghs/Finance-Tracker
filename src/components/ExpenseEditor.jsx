@@ -10,8 +10,8 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 
-function ExpenseEditor({ expense, onClose }) {
-    const predefinedCategories = expenseCategories;
+function ExpenseEditor({ expense, onClose, goalId, updateAccountBalance }) {
+  const predefinedCategories = expenseCategories;
 
   const [categories, setCategories] = useState(predefinedCategories);
   const [expenseData, setExpenseData] = useState({
@@ -40,7 +40,7 @@ function ExpenseEditor({ expense, onClose }) {
   const handleChange = (event) => {
     const { name, value } = event.target;
     if (name === "value" && value < 0) {
-      return; // Do nothing if value is negative
+      return; // Prevent negative values
     }
     setExpenseData((prev) => ({
       ...prev,
@@ -61,12 +61,40 @@ function ExpenseEditor({ expense, onClose }) {
       const userId = auth.currentUser?.uid;
       if (!userId) return;
 
+      // Validate available balance if updating a goal
+      if (goalId && updateAccountBalance) {
+        const remainingBalance = updateAccountBalance(0); // Get current balance
+        if (value > remainingBalance) {
+          setMessage("Insufficient balance for this contribution.");
+          return;
+        }
+      }
+
       if (expense) {
         const expenseDoc = doc(db, "expenses", expense.id);
         await updateDoc(expenseDoc, { ...expenseData, userId });
       } else {
         await addDoc(collection(db, "expenses"), { ...expenseData, userId });
       }
+
+      // Update goal if it's a contribution
+      if (goalId) {
+        const goalDocRef = doc(db, "goals", goalId);
+        const goalSnapshot = await goalDocRef.get();
+
+        if (goalSnapshot.exists) {
+          const goalData = goalSnapshot.data();
+          const newSavedAmount = goalData.saved + value;
+
+          await updateDoc(goalDocRef, { saved: newSavedAmount });
+        }
+      }
+
+      // Update account balance
+      if (updateAccountBalance) {
+        updateAccountBalance(-value); // Deduct the expense value from the balance
+      }
+
       setMessage("Expense saved successfully!");
       onClose();
     } catch (error) {
@@ -118,8 +146,13 @@ function ExpenseEditor({ expense, onClose }) {
           name="value"
           placeholder="Enter amount"
           value={expenseData.value === 0 ? "" : expenseData.value} // Display empty if value is 0
-          onFocus={(e) => e.target.value === "0" && setExpenseData({ ...expenseData, value: "" })} // Clear if 0 on focus
-          onBlur={(e) => !e.target.value && setExpenseData({ ...expenseData, value: 0 })} // Set back to 0 if empty on blur
+          onFocus={(e) =>
+            e.target.value === "0" &&
+            setExpenseData({ ...expenseData, value: "" })
+          } // Clear if 0 on focus
+          onBlur={(e) =>
+            !e.target.value && setExpenseData({ ...expenseData, value: 0 })
+          } // Set back to 0 if empty on blur
           onChange={handleChange}
           className="border border-gray-300 rounded w-full p-2"
         />
@@ -180,14 +213,15 @@ function ExpenseEditor({ expense, onClose }) {
 
 ExpenseEditor.propTypes = {
   expense: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    value: PropTypes.number.isRequired,
-    date: PropTypes.string.isRequired,
+    id: PropTypes.string,
+    name: PropTypes.string,
+    value: PropTypes.number,
+    date: PropTypes.string,
     category: PropTypes.string,
   }),
   onClose: PropTypes.func.isRequired,
+  goalId: PropTypes.string, // Optional: Link to a specific goal
+  updateAccountBalance: PropTypes.func, // Optional: Update account balance
 };
 
 export default ExpenseEditor;
-

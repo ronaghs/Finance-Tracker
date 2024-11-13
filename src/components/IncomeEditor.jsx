@@ -13,11 +13,11 @@ import {
 function IncomeEditor({ income, onClose, applyIncomeToGoals }) {
   const predefinedCategories = incomeCategories;
 
-  // Disregard error. Left here for future category implementation
   const [categories, setCategories] = useState(predefinedCategories);
   const [incomeData, setIncomeData] = useState({
     name: "",
     value: 0,
+    originalValue: 0, // Track the original income amount
     date: "",
     category: predefinedCategories[0],
   });
@@ -40,7 +40,7 @@ function IncomeEditor({ income, onClose, applyIncomeToGoals }) {
   const handleChange = (event) => {
     const { name, value } = event.target;
     if (name === "value" && value < 0) {
-      return; // Do nothing if value is negative
+      return; // Prevent negative values
     }
     setIncomeData((prev) => ({
       ...prev,
@@ -50,32 +50,50 @@ function IncomeEditor({ income, onClose, applyIncomeToGoals }) {
 
   const saveIncomeToDB = async () => {
     const { name, value, date, category } = incomeData;
-    
-    // Check if all fields are filled
+
+    // Validate inputs
     if (!name || !value || !date || !category) {
       setMessage("Please fill out all fields before saving.");
       return;
     }
-    
+
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) return;
 
-      const savedIncomeAmount = incomeData.value;
+      let remainingValue = value;
+
+      // Apply contributions to goals
+      if (applyIncomeToGoals) {
+        remainingValue = await applyIncomeToGoals(remainingValue); // Deduct contributions
+      }
 
       if (income) {
+        // Update existing income
         const incomeDoc = doc(db, "incomes", income.id);
-        await updateDoc(incomeDoc, { ...incomeData, userId });
+        await updateDoc(incomeDoc, {
+          ...incomeData,
+          originalValue: income.originalValue || value, // Preserve originalValue
+          value: remainingValue, // Save remaining value
+          userId,
+        });
       } else {
-        await addDoc(collection(db, "incomes"), { ...incomeData, userId });
+        // Add new income
+        const newIncomeRef = await addDoc(collection(db, "incomes"), {
+          ...incomeData,
+          originalValue: value, // Set originalValue on new income
+          value: remainingValue, // Save remaining value
+          userId,
+        });
+        incomeData.id = newIncomeRef.id; // Update local state with new ID
       }
+
+      setIncomeData((prev) => ({
+        ...prev,
+        value: remainingValue, // Update remaining value locally
+      }));
+
       setMessage("Income saved successfully!");
-
-      // Call the applyIncomeToGoals function after saving income
-      if (applyIncomeToGoals) {
-        applyIncomeToGoals(savedIncomeAmount);
-      }
-
       onClose();
     } catch (error) {
       console.error("Error saving income: ", error);
@@ -126,8 +144,13 @@ function IncomeEditor({ income, onClose, applyIncomeToGoals }) {
           name="value"
           placeholder="Enter amount"
           value={incomeData.value === 0 ? "" : incomeData.value} // Display empty if value is 0
-          onFocus={(e) => e.target.value === "0" && setIncomeData({ ...incomeData, value: "" })} // Clear if 0 on focus
-          onBlur={(e) => !e.target.value && setIncomeData({ ...incomeData, value: 0 })} // Set back to 0 if empty on blur
+          onFocus={(e) =>
+            e.target.value === "0" &&
+            setIncomeData({ ...incomeData, value: "" })
+          } // Clear if 0 on focus
+          onBlur={(e) =>
+            !e.target.value && setIncomeData({ ...incomeData, value: 0 })
+          } // Set back to 0 if empty on blur
           onChange={handleChange}
           className="border border-gray-300 rounded w-full p-2"
         />
@@ -188,10 +211,11 @@ function IncomeEditor({ income, onClose, applyIncomeToGoals }) {
 
 IncomeEditor.propTypes = {
   income: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    value: PropTypes.number.isRequired,
-    date: PropTypes.string.isRequired,
+    id: PropTypes.string,
+    name: PropTypes.string,
+    value: PropTypes.number,
+    originalValue: PropTypes.number, // Added for tracking original income
+    date: PropTypes.string,
     category: PropTypes.string,
   }),
   onClose: PropTypes.func.isRequired,
