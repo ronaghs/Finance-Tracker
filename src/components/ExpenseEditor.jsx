@@ -9,8 +9,9 @@ import {
   doc,
   deleteDoc,
 } from "firebase/firestore";
+import { Snackbar, Alert } from "@mui/material";
 
-function ExpenseEditor({ expense, onClose, goalId, updateAccountBalance }) {
+function ExpenseEditor({ expense, onClose, updateAccountBalance, budgets }) {
   const predefinedCategories = expenseCategories;
 
   const [categories, setCategories] = useState(predefinedCategories);
@@ -21,7 +22,11 @@ function ExpenseEditor({ expense, onClose, goalId, updateAccountBalance }) {
     category: predefinedCategories[0],
   });
 
-  const [message, setMessage] = useState("");
+  const [notification, setNotification] = useState({
+    message: "",
+    severity: "",
+  });
+  const [showSnackbar, setShowSnackbar] = useState(false);
 
   useEffect(() => {
     if (expense) {
@@ -48,12 +53,21 @@ function ExpenseEditor({ expense, onClose, goalId, updateAccountBalance }) {
     }));
   };
 
+  const showNotification = (message, severity = "info") => {
+    setNotification({ message, severity });
+    setShowSnackbar(true);
+  };
+
+  const handleCloseSnackbar = () => {
+    setShowSnackbar(false);
+  };
+
   const saveExpenseToDB = async () => {
     const { name, value, date, category } = expenseData;
 
     // Check if all fields are filled
     if (!name || !value || !date || !category) {
-      setMessage("Please fill out all fields before saving.");
+      showNotification("Please fill out all fields before saving.", "warning");
       return;
     }
 
@@ -61,12 +75,24 @@ function ExpenseEditor({ expense, onClose, goalId, updateAccountBalance }) {
       const userId = auth.currentUser?.uid;
       if (!userId) return;
 
-      // Validate available balance if updating a goal
-      if (goalId && updateAccountBalance) {
-        const remainingBalance = updateAccountBalance(0); // Get current balance
-        if (value > remainingBalance) {
-          setMessage("Insufficient balance for this contribution.");
-          return;
+      // Fetch the relevant budget
+      const categoryBudget = budgets?.find(
+        (budget) => budget.category === category
+      );
+
+      if (categoryBudget) {
+        const currentSpending = categoryBudget.currentSpending || 0;
+        const remainingBudget = categoryBudget.value - currentSpending;
+
+        // Check if the expense exceeds the remaining budget
+        if (value > remainingBudget) {
+          showNotification(
+            `This expense exceeds the budget for ${category}. Remaining budget: $${remainingBudget.toFixed(
+              2
+            )}`,
+            "error"
+          );
+          return; // Prevent saving the expense
         }
       }
 
@@ -77,29 +103,16 @@ function ExpenseEditor({ expense, onClose, goalId, updateAccountBalance }) {
         await addDoc(collection(db, "expenses"), { ...expenseData, userId });
       }
 
-      // Update goal if it's a contribution
-      if (goalId) {
-        const goalDocRef = doc(db, "goals", goalId);
-        const goalSnapshot = await goalDocRef.get();
-
-        if (goalSnapshot.exists) {
-          const goalData = goalSnapshot.data();
-          const newSavedAmount = goalData.saved + value;
-
-          await updateDoc(goalDocRef, { saved: newSavedAmount });
-        }
-      }
-
       // Update account balance
       if (updateAccountBalance) {
         updateAccountBalance(-value); // Deduct the expense value from the balance
       }
 
-      setMessage("Expense saved successfully!");
+      showNotification("Expense saved successfully!", "success");
       onClose();
     } catch (error) {
       console.error("Error saving expense: ", error);
-      setMessage("Error saving expense.");
+      showNotification("Error saving expense.", "error");
     }
   };
 
@@ -108,12 +121,12 @@ function ExpenseEditor({ expense, onClose, goalId, updateAccountBalance }) {
       if (expense) {
         const expenseDoc = doc(db, "expenses", expense.id);
         await deleteDoc(expenseDoc);
-        setMessage("Expense deleted successfully!");
+        showNotification("Expense deleted successfully!", "success");
         onClose();
       }
     } catch (error) {
       console.error("Error deleting expense: ", error);
-      setMessage("Error deleting expense.");
+      showNotification("Error deleting expense.", "error");
     }
   };
 
@@ -145,14 +158,14 @@ function ExpenseEditor({ expense, onClose, goalId, updateAccountBalance }) {
           type="number"
           name="value"
           placeholder="Enter amount"
-          value={expenseData.value === 0 ? "" : expenseData.value} // Display empty if value is 0
+          value={expenseData.value === 0 ? "" : expenseData.value}
           onFocus={(e) =>
             e.target.value === "0" &&
             setExpenseData({ ...expenseData, value: "" })
-          } // Clear if 0 on focus
+          }
           onBlur={(e) =>
             !e.target.value && setExpenseData({ ...expenseData, value: 0 })
-          } // Set back to 0 if empty on blur
+          }
           onChange={handleChange}
           className="border border-gray-300 rounded w-full p-2"
         />
@@ -206,7 +219,35 @@ function ExpenseEditor({ expense, onClose, goalId, updateAccountBalance }) {
         )}
       </div>
 
-      {message && <p className="mt-4 text-center text-gray-700">{message}</p>}
+      <Snackbar
+        open={showSnackbar}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "center", horizontal: "center" }}
+        sx={{
+          "& .MuiSnackbarContent-root": {
+            backgroundColor:
+              notification.severity === "error" ? "#f44336" : "#4caf50",
+            color: "#fff",
+            textAlign: "center",
+            fontSize: "1.2rem",
+            fontWeight: "bold",
+          },
+        }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={notification.severity}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            padding: "16px",
+          }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
@@ -220,8 +261,14 @@ ExpenseEditor.propTypes = {
     category: PropTypes.string,
   }),
   onClose: PropTypes.func.isRequired,
-  goalId: PropTypes.string, // Optional: Link to a specific goal
-  updateAccountBalance: PropTypes.func, // Optional: Update account balance
+  updateAccountBalance: PropTypes.func,
+  budgets: PropTypes.arrayOf(
+    PropTypes.shape({
+      category: PropTypes.string.isRequired,
+      value: PropTypes.number.isRequired,
+      currentSpending: PropTypes.number,
+    })
+  ),
 };
 
 export default ExpenseEditor;
