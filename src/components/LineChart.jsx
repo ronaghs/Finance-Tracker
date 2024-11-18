@@ -12,8 +12,9 @@ const LineChart = ({ months, incomeTotals, expenseTotals, netIncomeTotals }) => 
                 data: incomeTotals,
                 borderColor: "green",
                 backgroundColor: "rgba(0, 128, 0, 0.2)",
-                borderWidth: 2,
-                pointRadius: 5,
+                borderWidth: 4,
+                pointRadius: 7,
+                pointHoverRadius: 10,
                 pointBackgroundColor: "green",
                 fill: false,
             },
@@ -22,8 +23,9 @@ const LineChart = ({ months, incomeTotals, expenseTotals, netIncomeTotals }) => 
                 data: expenseTotals,
                 borderColor: "red",
                 backgroundColor: "rgba(255, 0, 0, 0.2)",
-                borderWidth: 2,
-                pointRadius: 5,
+                borderWidth: 4,
+                pointRadius: 7,
+                pointHoverRadius: 10,
                 pointBackgroundColor: "red",
                 fill: false,
             },
@@ -32,12 +34,13 @@ const LineChart = ({ months, incomeTotals, expenseTotals, netIncomeTotals }) => 
                 data: netIncomeTotals,
                 borderColor: "blue",
                 backgroundColor: "rgba(0, 0, 255, 0.2)",
-                borderWidth: 2,
-                pointRadius: 5,
+                borderWidth: 4,
+                pointRadius: 7,
+                pointHoverRadius: 10,
                 pointBackgroundColor: "blue",
                 fill: false,
-            }
-        ]
+            },
+        ],
     };
 
     const options = {
@@ -47,29 +50,32 @@ const LineChart = ({ months, incomeTotals, expenseTotals, netIncomeTotals }) => 
                 position: 'bottom',
                 labels: {
                     font: {
-                        size: 14,
+                        size: 16,
+                        family: "Arial, sans-serif",
                     },
-                    color: "#333",
+                    color: "#444",
                     padding: 20,
                 },
             },
             tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                backgroundColor: 'rgba(50, 50, 50, 0.8)',
                 bodyFont: {
                     size: 14,
                 },
-                padding: 10,
+                padding: 12,
             },
             title: {
                 display: true,
                 text: 'Monthly Financial Overview',
                 font: {
-                    size: 18,
+                    size: 22,
+                    weight: 'bold',
+                    family: "Arial, sans-serif",
                 },
-                color: '#333',
+                color: '#222',
                 padding: {
-                    top: 10,
-                    bottom: 30,
+                    top: 20,
+                    bottom: 40,
                 },
             },
         },
@@ -79,8 +85,25 @@ const LineChart = ({ months, incomeTotals, expenseTotals, netIncomeTotals }) => 
                     display: true,
                     text: 'Months',
                     font: {
-                        size: 14,
+                        size: 16,
+                        family: "Arial, sans-serif",
+                        weight: "bold",
                     },
+                    color: "#333",
+                },
+                grid: {
+                    drawBorder: true,
+                    borderColor: "#555", // Darker axis line
+                    borderWidth: 2, // Thicker axis line
+                    drawOnChartArea: false, // No gridlines on the chart
+                },
+                ticks: {
+                    font: {
+                        size: 14,
+                        weight: "bold",
+                    },
+                    color: "#222",
+                    padding: 10,
                 },
             },
             y: {
@@ -88,18 +111,33 @@ const LineChart = ({ months, incomeTotals, expenseTotals, netIncomeTotals }) => 
                     display: true,
                     text: 'Value',
                     font: {
-                        size: 14,
+                        size: 16,
+                        family: "Arial, sans-serif",
+                        weight: "bold",
                     },
+                    color: "#333",
                 },
                 beginAtZero: true,
+                grid: {
+                    drawBorder: true,
+                    borderColor: "#555",
+                    borderWidth: 2,
+                    color: "rgba(200, 200, 200, 0.3)", // Subtle gridlines
+                },
                 ticks: {
                     stepSize: 1000,
+                    font: {
+                        size: 14,
+                        weight: "bold",
+                    },
+                    color: "#222",
+                    padding: 10,
                 },
             },
         },
         elements: {
             line: {
-                tension: 0, // Ensures lines remain straight
+                tension: 0,
             },
         },
     };
