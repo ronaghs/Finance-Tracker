@@ -166,26 +166,33 @@ function Dashboard() {
         </div>
 
         {/* Month Selector */}
-        <div className="flex flex-col md:flex-row items-center mb-6">
+        {months.length > 0 && (
+          <div className="flex flex-col md:flex-row items-center mb-6">
           <label
             htmlFor="month-selector"
             className="mb-2 md:mb-0 mr-4 text-2xl font-semibold text-gray-800"
           >
             Select Month:
           </label>
-          <select
-            id="month-selector"
-            value={selected}
-            onChange={(e) => setSelected(e.target.value)}
-            className="border border-gray-300 rounded-lg p-3 text-lg w-full md:w-auto bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-          >
-            {months.map((month) => (
-              <option key={month} value={month} className="text-lg">
-                {month}
-              </option>
-            ))}
-          </select>
-        </div>
+          {months.length === 1 ? (
+            // Automatically set the selected month if only one is available
+            <span className="text-lg font-medium">{months[0]}</span>
+          ) : (
+              <select
+                  id="month-selector"
+                  value={selected}
+                  onChange={(e) => setSelected(e.target.value)}
+                  className="border border-gray-300 rounded-lg p-3 text-lg w-full md:w-auto bg-white shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+              >
+                {months.map((month) => (
+                  <option key={month} value={month} className="text-lg">
+                    {month}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
 
         {/* Financial Chart */}
         <FinancialChart
