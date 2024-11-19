@@ -24,6 +24,11 @@ import {
 import SavingsNotification from "../components/SavingsNotification";
 import NotificationBanner from "../components/NotificationBanner";
 import { FaWallet } from "react-icons/fa";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import Typography from "@mui/material/Typography";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 ChartJS.register(
   CategoryScale,
@@ -238,147 +243,146 @@ function Dashboard() {
         />
 
         {/* Incomes Section */}
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-6">
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <h3 className="text-2xl font-semibold text-gray-800">Incomes</h3>
-            <button
-              onClick={() => openIncomeEditor()}
-              className="bg-green-500 hover:bg-green-700 text-white py-3 px-6 rounded-lg shadow-lg flex items-center justify-center text-center transition duration-200 transform hover:scale-105"
-            >
-              <i className="fas fa-plus mr-3"></i> Add Income
-            </button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredIncomes.map((income) => (
-              <div
-                key={income.id}
-                className="bg-white p-6 shadow-lg rounded-lg relative border border-green-100 hover:border-green-300 transition duration-200 ease-in-out transform hover:scale-105"
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className="flex justify-between items-center mb-6">
+              <button
+                onClick={() => openIncomeEditor()}
+                className="bg-green-500 hover:bg-green-700 text-white py-3 px-6 rounded-lg shadow-lg flex items-center justify-center text-center transition duration-200 transform hover:scale-105"
               >
-                <h4 className="text-lg font-semibold text-green-600">
-                  {income.name}
-                </h4>
-                <p className="text-sm text-gray-500">{income.date}</p>
-                <p className="text-2xl font-bold text-gray-800 mt-2">
-                  ${income.value.toFixed(2)}
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Saved to goals: $
-                  {(income.originalValue
-                    ? income.originalValue - income.value
-                    : 0
-                  ).toFixed(2)}
-                </p>
-                <button
-                  onClick={() => openIncomeEditor(income)}
-                  className="mt-4 text-green-500 hover:text-green-700 font-medium flex items-center"
+                <i className="fas fa-plus mr-3"></i> Add Income
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredIncomes.map((income) => (
+                <div
+                  key={income.id}
+                  className="bg-white p-6 shadow-lg rounded-lg relative border border-green-100 hover:border-green-300 transition duration-200 ease-in-out transform hover:scale-105"
                 >
-                  <i className="fas fa-pen mr-2"></i> Edit
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+                  <h4 className="text-lg font-semibold text-green-600">
+                    {income.name}
+                  </h4>
+                  <p className="text-sm text-gray-500">{income.date}</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-2">
+                    ${income.value.toFixed(2)}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Saved to goals: $
+                    {(income.originalValue
+                      ? income.originalValue - income.value
+                      : 0
+                    ).toFixed(2)}
+                  </p>
+                  <button
+                    onClick={() => openIncomeEditor(income)}
+                    className="mt-4 text-green-500 hover:text-green-700 font-medium flex items-center"
+                  >
+                    <i className="fas fa-pen mr-2"></i> Edit
+                  </button>
+                </div>
+              ))}
+            </div>
+          </AccordionDetails>
+        </Accordion>
 
         {/* Expenses Section */}
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-6">
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <h3 className="text-2xl font-semibold text-gray-800">Expenses</h3>
-            <button
-              onClick={() => openExpenseEditor()}
-              className="bg-red-500 hover:bg-red-700 text-white py-3 px-6 rounded-lg shadow-lg flex items-center justify-center text-center transition duration-200 transform hover:scale-105"
-            >
-              <i className="fas fa-plus mr-3"></i> Add Expense
-            </button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredExpenses.map((expense) => (
-              <div
-                key={expense.id}
-                className="bg-white p-6 shadow-lg rounded-lg relative border border-red-100 hover:border-red-300 transition duration-200 ease-in-out transform hover:scale-105"
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className="flex justify-between items-center mb-6">
+              <button
+                onClick={() => openExpenseEditor()}
+                className="bg-red-500 hover:bg-red-700 text-white py-3 px-6 rounded-lg shadow-lg flex items-center justify-center text-center transition duration-200 transform hover:scale-105"
               >
-                <h4 className="text-lg font-semibold text-red-600">
-                  {expense.name}
-                </h4>
-                <p className="text-sm text-gray-500">
-                  {expense.date.split("T")[0]}
-                </p>
-                <p className="text-2xl font-bold text-gray-800 mt-2">
-                  ${expense.value.toFixed(2)}
-                </p>
-                <button
-                  onClick={() => openExpenseEditor(expense)}
-                  className="mt-4 text-red-500 hover:text-red-700 font-medium flex items-center"
+                <i className="fas fa-plus mr-3"></i> Add Expense
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredExpenses.map((expense) => (
+                <div
+                  key={expense.id}
+                  className="bg-white p-6 shadow-lg rounded-lg relative border border-red-100 hover:border-red-300 transition duration-200 ease-in-out transform hover:scale-105"
                 >
-                  <i className="fas fa-pen mr-2"></i> Edit
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+                  <h4 className="text-lg font-semibold text-red-600">
+                    {expense.name}
+                  </h4>
+                  <p className="text-sm text-gray-500">
+                    {expense.date.split("T")[0]}
+                  </p>
+                  <p className="text-2xl font-bold text-gray-800 mt-2">
+                    ${expense.value.toFixed(2)}
+                  </p>
+                  <button
+                    onClick={() => openExpenseEditor(expense)}
+                    className="mt-4 text-red-500 hover:text-red-700 font-medium flex items-center"
+                  >
+                    <i className="fas fa-pen mr-2"></i> Edit
+                  </button>
+                </div>
+              ))}
+            </div>
+          </AccordionDetails>
+        </Accordion>
 
         {/* Budgets Section */}
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-6">
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <h3 className="text-2xl font-semibold text-gray-800">Budgets</h3>
-            <button
-              onClick={() => handleCreateBudget()}
-              className="bg-blue-500 hover:bg-blue-700 text-white py-3 px-6 rounded-lg shadow-lg flex items-center justify-center text-center transition duration-200 transform hover:scale-105"
-            >
-              <i className="fas fa-plus mr-3"></i> Create Budget
-            </button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {budgetData.map((budget) => (
-              <div
-                key={budget.id}
-                className="bg-white p-6 shadow-lg rounded-xl transition-transform transform hover:scale-105 hover:shadow-xl relative"
+          </AccordionSummary>
+          <AccordionDetails>
+            <div className="flex justify-between items-center mb-6">
+              <button
+                onClick={() => handleCreateBudget()}
+                className="bg-blue-500 hover:bg-blue-700 text-white py-3 px-6 rounded-lg shadow-lg flex items-center justify-center text-center transition duration-200 transform hover:scale-105"
               >
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-lg font-semibold text-blue-600">
-                    {budget.category}
-                  </h4>
-                  <div className="flex space-x-3">
-                    <FaEdit
-                      onClick={() => handleEditBudget(budget)}
-                      className="text-blue-600 cursor-pointer hover:text-blue-800"
-                      title="Edit Budget"
-                    />
-                    <FaTrash
-                      onClick={() => handleDeleteBudget(budget.id)}
-                      className="text-red-600 cursor-pointer hover:text-red-800"
-                      title="Delete Budget"
-                    />
+                <i className="fas fa-plus mr-3"></i> Create Budget
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {budgetData.map((budget) => (
+                <div
+                  key={budget.id}
+                  className="bg-white p-6 shadow-lg rounded-xl transition-transform transform hover:scale-105 hover:shadow-xl relative"
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-lg font-semibold text-blue-600">
+                      {budget.category}
+                    </h4>
+                    <div className="flex space-x-3">
+                      <FaEdit
+                        onClick={() => handleEditBudget(budget)}
+                        className="text-blue-600 cursor-pointer hover:text-blue-800"
+                        title="Edit Budget"
+                      />
+                      <FaTrash
+                        onClick={() => handleDeleteBudget(budget.id)}
+                        className="text-red-600 cursor-pointer hover:text-red-800"
+                        title="Delete Budget"
+                      />
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <p className="mb-1">
+                      <span className="font-medium">Budget:</span> $
+                      {budget.value}
+                    </p>
+                    {budget.currentSpending !== null && (
+                      <p className="mb-1">
+                        <span className="font-medium">Current Spending:</span> $
+                        {budget.currentSpending.toFixed(2)}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <div className="text-sm text-gray-600">
-                  <p className="mb-1">
-                    <span className="font-medium">Budget:</span> ${budget.value}
-                  </p>
-                  {budget.currentSpending !== null && (
-                    <p className="mb-1">
-                      <span className="font-medium">Current Spending:</span> $
-                      {budget.currentSpending.toFixed(2)}
-                    </p>
-                  )}
-                  {budget.currentIncome !== null && (
-                    <p className="mb-1">
-                      <span className="font-medium">Current Income:</span> $
-                      {budget.currentIncome.toFixed(2)}
-                    </p>
-                  )}
-                  <p className="mb-1">
-                    <span className="font-medium">Start Date:</span>{" "}
-                    {budget.startDate}
-                  </p>
-                  <p>
-                    <span className="font-medium">End Date:</span>{" "}
-                    {budget.endDate}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </AccordionDetails>
+        </Accordion>
 
         {/* Popup Modals for Editing */}
         {isIncomePopupOpen && (
