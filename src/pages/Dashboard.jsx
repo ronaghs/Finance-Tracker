@@ -23,6 +23,7 @@ import {
 } from "chart.js";
 import SavingsNotification from "../components/SavingsNotification";
 import NotificationBanner from "../components/NotificationBanner";
+import { FaWallet } from "react-icons/fa";
 
 ChartJS.register(
   CategoryScale,
@@ -151,17 +152,48 @@ function Dashboard() {
           Dashboard
         </h2>
 
-        {/* Account Balance Section */}
-        <div className="mb-8">
-          <div className="p-6 bg-white rounded-lg shadow-lg flex items-center justify-between">
-            <p className="text-3xl font-bold text-gray-800">Account Balance:</p>
-            <p
-              className={`text-4xl font-extrabold ${
-                accountBalance >= 0 ? "text-green-600" : "text-red-600"
-              }`}
+        {/* Button section */}
+        <div className="flex justify-between items-center bg-gradient-to-r from-green-100 via-white to-blue-100 shadow-lg rounded-xl p-6 mb-8 border border-gray-200">
+          {/* Account Balance Section */}
+          <div className="flex items-center space-x-4">
+            <div
+              className="flex items-center justify-center w-12 h-12 rounded-full shadow-md"
+              style={{
+                background: "linear-gradient(to left, #3b82f6, #6b21a8)", // Gradient
+              }}
             >
-              ${accountBalance.toFixed(2)}
-            </p>
+              <FaWallet className="text-white text-2xl" />
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-gray-700">
+                Account Balance:
+              </p>
+              <p className="text-4xl font-extrabold text-green-700">
+                ${accountBalance.toFixed(2)}
+              </p>
+            </div>
+          </div>
+
+          {/* Buttons Section */}
+          <div className="flex space-x-4">
+            <button
+              onClick={() => openIncomeEditor()}
+              className="flex items-center bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-full shadow-md transition-all duration-200 transform hover:scale-105"
+            >
+              <i className="fas fa-plus-circle mr-2"></i> Add Income
+            </button>
+            <button
+              onClick={() => openExpenseEditor()}
+              className="flex items-center bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-full shadow-md transition-all duration-200 transform hover:scale-105"
+            >
+              <i className="fas fa-minus-circle mr-2"></i> Add Expense
+            </button>
+            <button
+              onClick={() => handleCreateBudget()}
+              className="flex items-center bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full shadow-md transition-all duration-200 transform hover:scale-105"
+            >
+              <i className="fas fa-wallet mr-2"></i> Create Budget
+            </button>
           </div>
         </div>
 
