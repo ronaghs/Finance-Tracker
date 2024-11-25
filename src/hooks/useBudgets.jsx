@@ -12,7 +12,7 @@ const useBudgets = () => {
   }, []);
 
   const handleCreateBudget = () => {
-    handleEditBudget(null); 
+    handleEditBudget(null);
     setBudgetPopupOpen(true);
   };
 

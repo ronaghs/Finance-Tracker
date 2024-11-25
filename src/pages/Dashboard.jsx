@@ -414,6 +414,7 @@ function Dashboard() {
               </button>
               <ExpenseEditor
                 expense={editExpense}
+                expenses={expenses}
                 budgets={budgets}
                 onClose={() => setExpensePopupOpen(false)}
               />

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { expenseCategories } from "../constants/categories";
 import { db, auth } from "../firebase/firebaseconfig";
 import {
   collection,
@@ -10,16 +9,20 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { Snackbar, Alert } from "@mui/material";
+import { expenseCategories } from "../constants/categories";
 
-function ExpenseEditor({ expense, onClose, updateAccountBalance, budgets }) {
-  const predefinedCategories = expenseCategories;
-
-  const [categories, setCategories] = useState(predefinedCategories);
+function ExpenseEditor({
+  expense,
+  onClose,
+  updateAccountBalance,
+  budgets,
+  expenses = [],
+}) {
   const [expenseData, setExpenseData] = useState({
     name: "",
     value: 0,
     date: "",
-    category: predefinedCategories[0],
+    category: "",
   });
 
   const [notification, setNotification] = useState({
@@ -34,19 +37,8 @@ function ExpenseEditor({ expense, onClose, updateAccountBalance, budgets }) {
     }
   }, [expense]);
 
-  const handleCategoryChange = (event) => {
-    const selectedCategory = event.target.value;
-    setExpenseData((prev) => ({
-      ...prev,
-      category: selectedCategory,
-    }));
-  };
-
   const handleChange = (event) => {
     const { name, value } = event.target;
-    if (name === "value" && value < 0) {
-      return; // Prevent negative values
-    }
     setExpenseData((prev) => ({
       ...prev,
       [name]: name === "value" ? Number(value) : value,
@@ -62,39 +54,53 @@ function ExpenseEditor({ expense, onClose, updateAccountBalance, budgets }) {
     setShowSnackbar(false);
   };
 
+  const validateExpense = () => {
+    const { category, value } = expenseData;
+
+    // Find the relevant budget
+    const matchingBudget = budgets.find(
+      (budget) => budget.category === category
+    );
+
+    if (matchingBudget) {
+      // Calculate the total current spending within the budget's date range
+      const currentSpending = expenses
+        .filter((expense) => {
+          return (
+            expense.category === category &&
+            new Date(expense.date) >= new Date(matchingBudget.startDate) &&
+            new Date(expense.date) <= new Date(matchingBudget.endDate)
+          );
+        })
+        .reduce((total, expense) => total + expense.value, 0);
+
+      const newTotalSpending = currentSpending + value;
+
+      if (newTotalSpending > matchingBudget.value) {
+        throw new Error(
+          `Budget exceeded for ${category}! Current Spending: $${currentSpending.toFixed(
+            2
+          )}, Attempted Spending: $${newTotalSpending.toFixed(2)}, Budget: $${
+            matchingBudget.value
+          }`
+        );
+      }
+    }
+  };
+
   const saveExpenseToDB = async () => {
     const { name, value, date, category } = expenseData;
 
-    // Check if all fields are filled
     if (!name || !value || !date || !category) {
       showNotification("Please fill out all fields before saving.", "warning");
       return;
     }
 
     try {
+      validateExpense(); // Validate the expense
+
       const userId = auth.currentUser?.uid;
       if (!userId) return;
-
-      // Fetch the relevant budget
-      const categoryBudget = budgets?.find(
-        (budget) => budget.category === category
-      );
-
-      if (categoryBudget) {
-        const currentSpending = categoryBudget.currentSpending || 0;
-        const remainingBudget = categoryBudget.value - currentSpending;
-
-        // Check if the expense exceeds the remaining budget
-        if (value > remainingBudget) {
-          showNotification(
-            `This expense exceeds the budget for ${category}. Remaining budget: $${remainingBudget.toFixed(
-              2
-            )}`,
-            "error"
-          );
-          return; // Prevent saving the expense
-        }
-      }
 
       if (expense) {
         const expenseDoc = doc(db, "expenses", expense.id);
@@ -103,30 +109,14 @@ function ExpenseEditor({ expense, onClose, updateAccountBalance, budgets }) {
         await addDoc(collection(db, "expenses"), { ...expenseData, userId });
       }
 
-      // Update account balance
       if (updateAccountBalance) {
-        updateAccountBalance(-value); // Deduct the expense value from the balance
+        updateAccountBalance(-value);
       }
 
       showNotification("Expense saved successfully!", "success");
       onClose();
     } catch (error) {
-      console.error("Error saving expense: ", error);
-      showNotification("Error saving expense.", "error");
-    }
-  };
-
-  const deleteExpense = async () => {
-    try {
-      if (expense) {
-        const expenseDoc = doc(db, "expenses", expense.id);
-        await deleteDoc(expenseDoc);
-        showNotification("Expense deleted successfully!", "success");
-        onClose();
-      }
-    } catch (error) {
-      console.error("Error deleting expense: ", error);
-      showNotification("Error deleting expense.", "error");
+      showNotification(error.message, "error");
     }
   };
 
@@ -138,14 +128,14 @@ function ExpenseEditor({ expense, onClose, updateAccountBalance, budgets }) {
 
       <div className="mb-4">
         <label className="block text-gray-700 text-sm font-bold mb-2">
-          Expense Source:
+          Name:
         </label>
         <input
           type="text"
           name="name"
-          placeholder="Enter expense source"
           value={expenseData.name}
           onChange={handleChange}
+          placeholder="Enter expense name"
           className="border border-gray-300 rounded w-full p-2"
         />
       </div>
@@ -157,16 +147,9 @@ function ExpenseEditor({ expense, onClose, updateAccountBalance, budgets }) {
         <input
           type="number"
           name="value"
-          placeholder="Enter amount"
-          value={expenseData.value === 0 ? "" : expenseData.value}
-          onFocus={(e) =>
-            e.target.value === "0" &&
-            setExpenseData({ ...expenseData, value: "" })
-          }
-          onBlur={(e) =>
-            !e.target.value && setExpenseData({ ...expenseData, value: 0 })
-          }
+          value={expenseData.value || ""}
           onChange={handleChange}
+          placeholder="Enter amount"
           className="border border-gray-300 rounded w-full p-2"
         />
       </div>
@@ -191,11 +174,12 @@ function ExpenseEditor({ expense, onClose, updateAccountBalance, budgets }) {
         <select
           name="category"
           value={expenseData.category}
-          onChange={handleCategoryChange}
-          className="border border-gray-300 rounded p-2 w-full"
+          onChange={handleChange}
+          className="border border-gray-300 rounded w-full p-2"
         >
-          {categories.map((category, index) => (
-            <option key={index} value={category}>
+          <option value="">Select Category</option>
+          {expenseCategories.map((category) => (
+            <option key={category} value={category}>
               {category}
             </option>
           ))}
@@ -211,7 +195,11 @@ function ExpenseEditor({ expense, onClose, updateAccountBalance, budgets }) {
         </button>
         {expense && (
           <button
-            onClick={deleteExpense}
+            onClick={() => {
+              const expenseDoc = doc(db, "expenses", expense.id);
+              deleteDoc(expenseDoc);
+              onClose();
+            }}
             className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
           >
             Delete
@@ -223,28 +211,8 @@ function ExpenseEditor({ expense, onClose, updateAccountBalance, budgets }) {
         open={showSnackbar}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "center", horizontal: "center" }}
-        sx={{
-          "& .MuiSnackbarContent-root": {
-            backgroundColor:
-              notification.severity === "error" ? "#f44336" : "#4caf50",
-            color: "#fff",
-            textAlign: "center",
-            fontSize: "1.2rem",
-            fontWeight: "bold",
-          },
-        }}
       >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={notification.severity}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            padding: "16px",
-          }}
-        >
+        <Alert onClose={handleCloseSnackbar} severity={notification.severity}>
           {notification.message}
         </Alert>
       </Snackbar>
@@ -253,22 +221,11 @@ function ExpenseEditor({ expense, onClose, updateAccountBalance, budgets }) {
 }
 
 ExpenseEditor.propTypes = {
-  expense: PropTypes.shape({
-    id: PropTypes.string,
-    name: PropTypes.string,
-    value: PropTypes.number,
-    date: PropTypes.string,
-    category: PropTypes.string,
-  }),
+  expense: PropTypes.object,
   onClose: PropTypes.func.isRequired,
   updateAccountBalance: PropTypes.func,
-  budgets: PropTypes.arrayOf(
-    PropTypes.shape({
-      category: PropTypes.string.isRequired,
-      value: PropTypes.number.isRequired,
-      currentSpending: PropTypes.number,
-    })
-  ),
+  budgets: PropTypes.array.isRequired,
+  expenses: PropTypes.array.isRequired, // Ensures expenses are passed correctly
 };
 
 export default ExpenseEditor;
