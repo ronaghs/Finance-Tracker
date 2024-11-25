@@ -1,5 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
+import trackingss from "../images/trackingss.png";
+import goalss from "../images/goalss.png";
+import dashboardss from "../images/dashboardss.png";
 
 function LandingPage() {
   const navigate = useNavigate();
@@ -33,9 +36,8 @@ function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Track Expenses */}
             <div className="bg-white p-6 rounded-lg shadow-lg">
-              {/* TODO: Replace placeholder with a relevant img from the site once complete */}
               <img
-                src="https://via.placeholder.com/150"
+                src={trackingss}
                 alt="Track Expenses"
                 className="mx-auto mb-4"
               />
@@ -48,12 +50,7 @@ function LandingPage() {
 
             {/* Set Goals */}
             <div className="bg-white p-6 rounded-lg shadow-lg">
-              {/* TODO: Replace placeholder with a relevant img from the site once complete */}
-              <img
-                src="https://via.placeholder.com/150"
-                alt="Set Goals"
-                className="mx-auto mb-4"
-              />
+              <img src={goalss} alt="Set Goals" className="mx-auto mb-4" />
               <h3 className="text-2xl font-semibold mb-2">Set Goals</h3>
               <p>
                 Set and achieve financial goals by keeping a close eye on your
@@ -63,9 +60,8 @@ function LandingPage() {
 
             {/* Dashboard Overview */}
             <div className="bg-white p-6 rounded-lg shadow-lg">
-              {/* TODO: Replace placeholder with a relevant img from the site once complete */}
               <img
-                src="https://via.placeholder.com/150"
+                src={dashboardss}
                 alt="Dashboard Overview"
                 className="mx-auto mb-4"
               />
